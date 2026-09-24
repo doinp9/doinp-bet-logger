@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Doinp Bet Logger"
+  },
+  "extDesc": {
+    "message": "스포츠북, 거래소, 예측 시장에서 한 베팅을 감지해 CSV나 트래커에 기록합니다. 기기에서만 작동합니다."
+  }
+}

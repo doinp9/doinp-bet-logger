@@ -1,0 +1,18 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Buchmacher (DE, Einzelwette)</title><style>body{font-family:sans-serif;display:flex;gap:24px}main{flex:1}aside{width:320px;border:1px solid #999;padding:10px}.card{border:1px solid #ccc;margin:6px 0;padding:6px}</style></head><body>
+<!-- Synthetic German-language sportsbook: generic vocabulary, not a copy of any real book -->
+<nav><a href="#">Meine Wetten</a> · <a href="#">Sport</a></nav>
+<main><h2>Fußball</h2><div>Bayern München - Borussia Dortmund <button>1,85</button><button>3,90</button><button>4,20</button></div></main>
+<aside class="wettschein" id="slip">
+  <div>Einzelwette</div>
+  <div class="card"><div>Bayern München - Borussia Dortmund</div><div>Spielausgang</div><div><b>Bayern München</b> <span>1,85</span></div></div>
+  <label>Einsatz <input id="stake" type="text" inputmode="decimal" placeholder="0,00 €"></label>
+  <div><span>Möglicher Gewinn</span> <span id="ret">0,00 €</span></div>
+  <button id="place">Wette platzieren</button>
+</aside>
+<script>
+const stake=document.getElementById('stake'),ret=document.getElementById('ret');
+const eur=v=>v.toFixed(2).replace('.',',')+' €';
+stake.addEventListener('input',()=>{const v=parseFloat(stake.value.replace(/\./g,'').replace(',','.'))||0;ret.textContent=eur(v*1.85);});
+document.getElementById('place').addEventListener('click',()=>{const s=document.getElementById('slip');s.innerHTML='<div>Bitte warten…</div>';
+  setTimeout(()=>{s.innerHTML='<div class="receipt"><h3>Wette platziert</h3><div>Wettnummer 55120933</div></div>';},700);});
+</script></body></html>

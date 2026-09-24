@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Doinp Bet Logger</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="top">
+      <div class="brand">
+        <img class="brand__logo" src="../../icons/logo.png" alt="" width="34" height="34" />
+        <div class="brand__txt"><span class="brand__name">Doinp Bet Logger</span><span class="brand__sub" id="brandSub"></span></div>
+      </div>
+      <button class="iconbtn" id="btnExpand" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg></button>
+    </header>
+
+    <section class="site" id="site"></section>
+
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="review" type="button"><span data-i18n="tab.review"></span><span class="tabs__n" id="nReview"></span></button>
+      <button role="tab" data-tab="capture" type="button"><span data-i18n="tab.capture"></span></button>
+      <button role="tab" data-tab="history" type="button"><span data-i18n="tab.history"></span><span class="tabs__n" id="nReady"></span></button>
+      <button role="tab" data-tab="settings" type="button"><span data-i18n="tab.settings"></span></button>
+    </nav>
+
+    <p class="msg" id="msg" role="status" hidden></p>
+    <main class="view" id="view"></main>
+    <footer class="bulk" id="bulk" hidden></footer>
+  </div>
+
+  <script src="../vocab/en.js"></script>
+  <script src="../vocab/pt.js"></script>
+  <script src="../vocab/es.js"></script>
+  <script src="../vocab/fr.js"></script>
+  <script src="../vocab/de.js"></script>
+  <script src="../vocab/it.js"></script>
+  <script src="../vocab/nl.js"></script>
+  <script src="../vocab/pl.js"></script>
+  <script src="../vocab/tr.js"></script>
+  <script src="../vocab/ru.js"></script>
+  <script src="../vocab/ko.js"></script>
+  <script src="../vocab/zh.js"></script>
+  <script src="../vocab/ja.js"></script>
+  <script src="../lib/parse.js"></script>
+  <script src="../i18n/en.js"></script>
+  <script src="../i18n/pt.js"></script>
+  <script src="../i18n/es.js"></script>
+  <script src="../i18n/ko.js"></script>
+  <script src="../i18n/de.js"></script>
+  <script src="../i18n/it.js"></script>
+  <script src="../i18n/zh.js"></script>
+  <script src="../i18n/ja.js"></script>
+  <script src="../i18n/fr.js"></script>
+  <script src="../i18n/tr.js"></script>
+  <script src="../i18n/pl.js"></script>
+  <script src="../i18n/ru.js"></script>
+  <script src="../i18n/nl.js"></script>
+  <script src="../lib/csv.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

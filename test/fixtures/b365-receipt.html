@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Book E (div buttons, split currency)</title>
+<style>body{font-family:sans-serif;display:flex;gap:24px;background:#111;color:#eee}.row{display:flex;gap:10px;margin:6px 0}.pr{color:#e0c64a}
+.bss{width:340px;border:1px solid #444;padding:10px}.btn{background:#1d7a5a;padding:10px;text-align:center;cursor:pointer;margin-top:8px}
+.rcpt{position:fixed;left:150px;bottom:40px;width:420px;background:#fff;color:#111}.rcpt .hd{background:#1d7a5a;color:#fff;padding:8px}</style></head><body>
+<main><div class="row"><span>CAR Panthers</span><span>CLE Browns</span><span class="pr">-2.5</span><span class="pr">1.83</span><span class="pr">O 42.5</span><span class="pr">1.95</span><span class="pr">1.66</span><span class="pr">2.25</span></div>
+<div class="row"><span>CIN Bengals</span><span>PIT Steelers</span><span class="pr">1.90</span><span class="pr">1.52</span><span class="pr">2.60</span></div></main>
+<div class="bss">
+  <div class="bss-hd">Bet Slip</div>
+  <div class="bss-sel"><div class="nm"><span>CAR Panthers</span></div><div class="od"><span>1.66</span></div><div class="mk">Money Line</div><div class="ev">CAR Panthers @ CLE Browns</div></div>
+  <div class="bss-stake"><div class="lbl">Stake</div><input id="stake" type="text" inputmode="decimal"></div>
+  <div class="bss-ret"><div class="lbl">To Return</div><div class="val"><span class="c">R$</span><span class="n" id="ret">0.00</span></div></div>
+  <div class="btn bss-PlaceBetButton" id="place"><div class="t">Place Bet</div><div class="s" id="pbs"></div></div>
+</div>
+<script>
+const st=document.getElementById('stake');
+st.addEventListener('input',()=>{const v=parseFloat(st.value.replace(',','.'))||0;document.getElementById('ret').textContent=(v*1.66).toFixed(2);document.getElementById('pbs').textContent='R$'+v.toFixed(2);});
+document.getElementById('place').addEventListener('click',()=>{const v=(parseFloat(st.value.replace(',','.'))||0).toFixed(2);setTimeout(()=>{
+ document.querySelector('.bss').innerHTML='<div class="bss-hd">Bet Slip</div>';
+ const r=document.createElement('div');r.className='rcpt';
+ r.innerHTML='<div class="hd"><div>Bet Placed</div><div>Bet Ref XZ1234567F</div></div><div class="row"><span>Live Alerts</span><span>Reuse Selections</span></div>'+
+ '<div class="sel"><div class="row"><span><b>CAR Panthers</b></span><span>1.66</span></div><div>Money Line <span>EARLY PAYOUT</span></div><div>CAR Panthers @ CLE Browns</div></div>'+
+ '<div class="row"><div><div>Stake</div><div><span>R$</span><span>'+v+'</span></div></div><div><div>To Return</div><div><span>R$</span><span>'+(v*1.66).toFixed(2)+'</span></div></div></div>';
+ document.body.appendChild(r);},600);});
+</script></body></html>

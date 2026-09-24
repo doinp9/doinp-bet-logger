@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Doinp Bet Logger"
+  },
+  "extDesc": {
+    "message": "ブックメーカー、取引所、予測市場でのベットを検出し、CSV またはトラッカーに記録します。ローカルのみで動作。"
+  }
+}

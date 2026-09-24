@@ -1,0 +1,24 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><title>Exchange (back / lay)</title><style>body{font-family:sans-serif;display:flex;gap:24px}main{flex:1}aside{width:340px;border:1px solid #999;padding:10px}.bet{border:1px solid #ccc;margin:6px 0;padding:6px}.back{background:#dbeeff}.lay-row{background:#ffe3ec}label{display:inline-block;margin-right:8px}input{width:70px}</style></head><body>
+<!-- Synthetic exchange page. Betfair blocks this test machine, so the wording comes from
+     Betfair's help pages (Back (Bet For) / Lay (Bet Against) / Backer's stake / Liability /
+     Place bets); the layout is invented. The first row is marked "back" in its class, the
+     second only by its section heading, to exercise both ways of reading the side. -->
+<main><h2>Arsenal v Chelsea · Match Odds</h2>
+  <div>Arsenal <button>2.48</button><button>2.52</button></div>
+  <div>Chelsea <button>3.35</button><button>3.45</button></div>
+  <div>The Draw <button>3.30</button><button>3.40</button></div></main>
+<aside class="betslip" id="slip">
+  <h4>Back (Bet For)</h4>
+  <div class="bet back"><div>Arsenal</div><div>Arsenal v Chelsea</div><div>Match Odds</div>
+    <label>Odds <input aria-label="Odds" id="bodds" value="2.5"></label><label>Stake <input aria-label="Stake" id="bstake" placeholder="£"></label><div>Profit: <span id="bprof">£0.00</span></div></div>
+  <h4>Lay (Bet Against)</h4>
+  <div class="bet lay-row"><div>Chelsea</div><div>Arsenal v Chelsea</div><div>Match Odds</div>
+    <label>Odds <input aria-label="Odds" id="lodds" value="3.4"></label><label>Backer's stake <input aria-label="Backer's stake" id="lstake" placeholder="£"></label><div>Liability: <span id="liab">£0.00</span></div></div>
+  <button id="place">Place bets</button>
+</aside>
+<script>
+const g=(id)=>document.getElementById(id), n=(el)=>parseFloat(el.value)||0, gbp=(v)=>'£'+v.toFixed(2);
+function upd(){ g('bprof').textContent=gbp(n(g('bstake'))*(n(g('bodds'))-1)); g('liab').textContent=gbp(n(g('lstake'))*(n(g('lodds'))-1)); }
+['bodds','bstake','lodds','lstake'].forEach((id)=>g(id).addEventListener('input',upd));
+g('place').addEventListener('click',()=>{const s=g('slip'); setTimeout(()=>{s.innerHTML='<div class="receipt"><h3>Bets placed</h3><div>Arsenal · Back 2.5 · Matched</div><div>Chelsea · Lay 3.4 · Matched</div></div>';},700);});
+</script></body></html>

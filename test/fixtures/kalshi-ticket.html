@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Prediction market (contracts ticket)</title><style>body{font-family:sans-serif;display:flex;gap:24px}main{flex:1}.ticket{width:320px;border:1px solid #999;padding:12px}[aria-pressed=true]{outline:2px solid #2a2}</style></head><body>
+<!-- Synthetic contracts-based ticket. Kalshi blocks this test machine, so the terms come from
+     Kalshi's own help and fee documents (contracts, Yes / No price in cents, payout, fees);
+     the layout and the button wording are invented. -->
+<main><h2>Highest temperature in NYC today?</h2><div>86° to 87° <button>Yes 42¢</button> <button>No 59¢</button></div><div>88° or above <button>Yes 12¢</button> <button>No 89¢</button></div></main>
+<div class="ticket" id="ticket">
+  <div>Highest temperature in NYC today?</div>
+  <div>86° to 87°</div>
+  <div><button aria-pressed="true">Buy</button> <button aria-pressed="false">Sell</button></div>
+  <div><button aria-pressed="true" id="y">Yes 42¢</button> <button aria-pressed="false">No 59¢</button></div>
+  <label>Contracts <input id="n" type="text" inputmode="numeric" aria-label="Contracts"></label>
+  <div>Cost <span id="cost">$0.00</span></div>
+  <div>Fees <span id="fee">$0.00</span></div>
+  <div>Payout if yes <span id="pay">$0.00</span></div>
+  <button id="go">Place order</button>
+</div>
+<script>
+const g=(id)=>document.getElementById(id);
+// Kalshi's general taker fee: round up(0.07 × C × P × (1 − P)) to the cent
+g('n').addEventListener('input',()=>{ const c=parseFloat(g('n').value)||0, p=0.42; g('cost').textContent='$'+(c*p).toFixed(2); g('fee').textContent='$'+(Math.ceil(0.07*c*p*(1-p)*100)/100).toFixed(2); g('pay').textContent='$'+c.toFixed(2); });
+g('go').addEventListener('click',()=>{ setTimeout(()=>{ g('ticket').insertAdjacentHTML('beforeend','<div>Order placed</div>'); },600); });
+</script></body></html>

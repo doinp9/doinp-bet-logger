@@ -1,0 +1,18 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Casa A (PT, simples)</title><style>body{font-family:sans-serif;display:flex;gap:24px}main{flex:1}.ev{display:flex;gap:8px;align-items:center;margin:6px 0}.o{padding:6px 10px}aside{width:320px;border:1px solid #999;padding:10px}.card{border:1px solid #ccc;margin:6px 0;padding:6px}</style></head><body>
+<nav><a href="#" id="nav-mybets">Minhas apostas</a> · <a href="#">Esportes</a></nav>
+<main class="grid"><h2>Futebol</h2><div class="ev"><span>Flamengo x Palmeiras</span><button class="o" data-sel="Flamengo" data-odd="2,10">2,10</button><button class="o">3,40</button><button class="o">3,60</button></div><div class="ev"><span>Corinthians x São Paulo</span><button class="o">2,55</button><button class="o">3,10</button><button class="o">2,90</button></div><div class="ev"><span>Grêmio x Internacional</span><button class="o">2,40</button><button class="o">3,20</button><button class="o">3,05</button></div></main>
+<aside class="cupom-apostas" id="slip">
+  <div class="cupom__tabs"><span>Simples</span> <span>Múltipla</span></div>
+  <div class="card"><div class="ev-name">Flamengo x Palmeiras</div><div class="mk">Resultado Final</div><div class="sel"><b>Flamengo</b> <span class="odd">2,10</span></div><button class="rm">×</button></div>
+  <label>Valor da aposta <input id="stake" type="text" inputmode="decimal" placeholder="R$ 0,00"></label>
+  <div class="ret"><span>Retorno potencial</span> <span id="ret">R$ 0,00</span></div>
+  <button id="place" class="btn-place">Apostar</button>
+</aside>
+<script>
+const stake=document.getElementById('stake'),ret=document.getElementById('ret'),btn=document.getElementById('place');
+const brl=v=>'R$ '+v.toFixed(2).replace('.',',');
+stake.addEventListener('input',()=>{const v=parseFloat(stake.value.replace(/\./g,'').replace(',','.'))||0;ret.textContent=brl(v*2.10);btn.textContent='Apostar '+brl(v);});
+btn.addEventListener('click',()=>{const v=stake.value;const s=document.getElementById('slip');s.innerHTML='<div class="spin">Processando…</div>';
+  setTimeout(()=>{ if(window.FAIL){ s.innerHTML='<div class="err">Saldo insuficiente para esta aposta.</div>'; return; }
+  s.innerHTML='<div class="receipt"><h3>Aposta realizada!</h3><div>Nº da aposta 8842193</div><div class="card"><div>Flamengo x Palmeiras</div><div>Resultado Final</div><div><b>Flamengo</b> <span>2,10</span></div></div><div>Valor apostado R$ '+v+'</div></div>'; },700);});
+</script></body></html>

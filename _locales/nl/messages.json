@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Doinp Bet Logger"
+  },
+  "extDesc": {
+    "message": "Detecteert je weddenschappen bij bookmakers, exchanges en voorspellingsmarkten en legt ze vast in CSV of je tracker. Lokaal."
+  }
+}

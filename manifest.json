@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "short_name": "Bet Logger",
+  "description": "__MSG_extDesc__",
+  "version": "0.7.0",
+  "default_locale": "en",
+  "icons": {
+    "16": "icons/logo.png",
+    "32": "icons/logo.png",
+    "48": "icons/logo.png",
+    "128": "icons/logo.png"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Doinp Bet Logger",
+    "default_icon": {
+      "16": "icons/logo.png",
+      "32": "icons/logo.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "notifications"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://doinp.com.br/*",
+    "https://www.doinp.com.br/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://doinp.com.br/tools/betting-tracker*",
+        "https://www.doinp.com.br/tools/betting-tracker*",
+        "http://localhost/tools/betting-tracker*",
+        "http://127.0.0.1/tools/betting-tracker*"
+      ],
+      "js": [
+        "src/content/tracker-bridge.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'none'"
+  }
+}

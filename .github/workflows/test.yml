@@ -1,0 +1,12 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # pure-JS tests: parsing, 13-language vocabulary, exchange / prediction maths, CSV, and the no-network check
+      - run: node --test test/unit.test.js test/markets.test.js

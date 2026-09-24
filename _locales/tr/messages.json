@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Doinp Bet Logger"
+  },
+  "extDesc": {
+    "message": "Bahis sitelerinde, borsalarda ve tahmin piyasalarında yaptığınız bahisleri algılar, CSV'ye veya tracker'a kaydeder. Yerel."
+  }
+}

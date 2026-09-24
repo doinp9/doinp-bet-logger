@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Doinp Bet Logger"
+  },
+  "extDesc": {
+    "message": "检测你在博彩网站、交易所和预测市场的投注，并记录到 CSV 或你的 Tracker。仅在本地运行。"
+  }
+}

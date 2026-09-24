@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Prediction market (Polymarket-style ticket)</title><style>body{font-family:sans-serif;display:flex;gap:24px}main{flex:1}.row{display:flex;gap:8px;align-items:center;margin:6px 0}.ticket{width:320px;border:1px solid #999;padding:12px}[role=radio]{padding:6px 10px}[aria-checked=true]{outline:2px solid #2a2}</style></head><body>
+<!-- Structure copied from polymarket.com's order ticket as probed on 24 Sep 2026 (logged out):
+     header "title / outcome · Yes", Buy / Sell radios (role=radio, aria-checked), Yes / No price
+     radios, "Amount" + "$" input, "To win", "Avg. Price", "Trade". The confirmation after
+     "Trade" could not be observed (trading needs an account), so "Order filled" is assumed. -->
+<main><h2>Fed Decision in October?</h2>
+  <div class="row">50+ bps decrease <button>Buy Yes 0.3¢</button><button>Buy No 99.8¢</button></div>
+  <div class="row">25 bps decrease <button>Buy Yes 0.6¢</button><button>Buy No 99.5¢</button></div>
+  <div class="row">No change <button id="pick">Buy Yes 35¢</button><button>Buy No 66¢</button></div></main>
+<div class="ticket" id="ticket">
+  <div><div>Fed Decision in October?</div><div style="display:flex;gap:4px"><div>No change</div><div>·</div><div id="sideTxt">Yes</div></div></div>
+  <div role="radiogroup"><button role="radio" aria-checked="true" data-state="checked" id="buy">Buy</button><button role="radio" aria-checked="false" data-state="unchecked" id="sell">Sell</button> <button>Market</button></div>
+  <div role="radiogroup"><button role="radio" aria-checked="true" data-state="checked" id="yes"><span>Yes</span> <span>35¢</span></button><button role="radio" aria-checked="false" data-state="unchecked" id="no"><span>No</span> <span>66¢</span></button></div>
+  <div><div>Amount</div><div><span>$</span><input id="amt" type="text" inputmode="decimal" placeholder="$0"></div></div>
+  <div><button>+$1</button><button>+$5</button><button>+$10</button><button>+$100</button></div>
+  <div><div><div>To win</div><div>Avg. Price <span id="avg">35¢</span></div></div><div id="win">$0.00</div></div>
+  <button id="trade" data-color="blue">Trade</button>
+</div>
+<script>
+const g=(id)=>document.getElementById(id);
+let price=0.35;
+function upd(){ const v=parseFloat(g('amt').value)||0; g('win').textContent='$'+(v/price).toFixed(2); }
+g('amt').addEventListener('input',upd);
+function radio(on,off){ on.setAttribute('aria-checked','true'); on.dataset.state='checked'; off.setAttribute('aria-checked','false'); off.dataset.state='unchecked'; }
+g('sell').addEventListener('click',()=>radio(g('sell'),g('buy'))); g('buy').addEventListener('click',()=>radio(g('buy'),g('sell')));
+g('no').addEventListener('click',()=>{radio(g('no'),g('yes')); price=0.66; g('avg').textContent='66¢'; g('sideTxt').textContent='No'; upd();});
+g('yes').addEventListener('click',()=>{radio(g('yes'),g('no')); price=0.35; g('avg').textContent='35¢'; g('sideTxt').textContent='Yes'; upd();});
+g('trade').addEventListener('click',()=>{ setTimeout(()=>{ const t=document.createElement('div'); t.className='toast'; t.textContent='Order filled'; document.body.appendChild(t); g('amt').value=''; upd(); },600); });
+</script></body></html>

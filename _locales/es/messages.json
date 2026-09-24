@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Doinp Bet Logger"
+  },
+  "extDesc": {
+    "message": "Detecta tus apuestas en casas, exchanges y mercados de predicción y las registra en CSV o en tu tracker. Solo local."
+  }
+}

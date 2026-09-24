@@ -1,0 +1,14 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Casa C (PT, simples múltiplas)</title></head><body>
+<div class="lista"><div>Botafogo x Fluminense <button>1,95</button><button>3,30</button><button>4,00</button></div><div>Bahia x Vitória <button>2,20</button><button>3,40</button><button>3,50</button></div></div>
+<div id="boletim-apostas" class="boletim">
+  <div class="item"><p>Botafogo x Fluminense</p><p>Resultado Final</p><p><strong>Botafogo</strong></p><em class="cotacao">1,95</em><input class="valor" type="text" value=""></div>
+  <div class="item"><p>Bahia x Vitória · Ao vivo</p><p>Resultado Final</p><p><strong>Empate</strong></p><em class="cotacao">3,40</em><input class="valor" type="text" value=""></div>
+  <div class="totais"><span>Retorno total</span> <b id="ret">R$ 0,00</b></div>
+  <button id="place">Fazer apostas</button>
+</div>
+<script>
+const ins=[...document.querySelectorAll('.valor')],odds=[1.95,3.40],ret=document.getElementById('ret');
+const num=s=>parseFloat(String(s).replace(/\./g,'').replace(',','.'))||0;
+ins.forEach(i=>i.addEventListener('input',()=>{const t=ins.reduce((a,x,k)=>a+num(x.value)*odds[k],0);ret.textContent='R$ '+t.toFixed(2).replace('.',',');}));
+document.getElementById('place').addEventListener('click',()=>{setTimeout(()=>{const m=document.createElement('div');m.className='modal';m.innerHTML='<h3>Apostas feitas com sucesso</h3><p>Boa sorte!</p>';document.body.appendChild(m);},500);});
+</script></body></html>

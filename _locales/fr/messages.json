@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "Doinp Bet Logger"
+  },
+  "extDesc": {
+    "message": "Détecte vos paris chez les bookmakers, exchanges et marchés prédictifs et les enregistre en CSV ou dans votre tracker. En local."
+  }
+}
