@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Pinnacle-style slip</title><style>body{font-family:sans-serif;display:flex;gap:24px}main{flex:1}.row{display:flex;gap:8px;align-items:center;margin:6px 0}button{padding:6px 10px}aside{width:300px;border:1px solid #999;padding:10px}.card-htb3BvHCKc{border:1px solid #ccc;padding:8px;margin:6px 0}.receipt{background:#d2f7d7;padding:8px}</style></head><body>
+<!-- Slip structure (classes, data-test-id, the Stake + Win inputs, Payout) copied from pinnacle.com as
+     probed on 24 Sep 2026 (logged out). The receipt reproduces the user's pinnacle.bet.br screenshots:
+     EN "Bet Accepted / #… / Stake BRL 1.00 / Win BRL 0.68 / Reuse selections",
+     PT "Aceitar aposta / #… / Risco BRL 1.00 / Ganho BRL 0.68 / Reutilizar seleção".
+     The logged-in button ("Place Bets" / "Fazer apostas") comes from Pinnacle's translation files;
+     pinnacle.bet.br's own Portuguese wording could not be read (the site blocks this machine). -->
+<main><h2>MLB</h2>
+  <div class="row"><span>Tampa Bay Rays</span><span>New York Yankees</span><button>2.350</button><button id="pick">1.684</button><button>+1.5 1.561</button><button>6 1.943</button></div>
+  <div class="row"><span>Cincinnati Reds</span><span>Atlanta Braves</span><button>3.020</button><button>1.446</button></div></main>
+<aside id="betslip">
+  <div><span id="t-slip">BET SLIP</span> <span id="t-my">MY BETS</span></div>
+  <div id="t-singles">SINGLES</div>
+  <div id="rc"></div>
+  <div class="card-htb3BvHCKc betslip-card" data-test-id="Betslip-Card"><div><div>
+    <div class="details-r7uw6SdutY betslipCardDetails" data-test-id="Betslip-SelectionDetails">
+      <button class="betslip-close-button" aria-label="Remove card">×</button>
+      <div class="title-a4XsNOISuw selectionDetailsTitle" data-test-id="SelectionDetails-Title"><div class="matchupName-LaAwbv3B5f selectionDetailsMatchupName" id="mu">Tampa Bay Rays - New York Yankees</div></div>
+      <div class="wagerSummary-tMZiOFJE1I selectionDetailsWagerSummary" data-test-id="SelectionDetails-WagerType" id="ws">Money Line – Game – MLB</div>
+      <div class="selectionDetailsPriceContainer"><div class="priceLabel-ed9hOwL2kK"><span class="priceLabelAlt-yVgb64qTbS" data-test-id="SelectionDetails-Selection">New York Yankees</span></div>
+        <div class="price-LzIMsRnyMY betslipCardPrice" data-test-id="SelectionDetails-Odds"><span>1.684</span></div></div>
+    </div>
+    <div class="container-pX0J2FEftz betslipCardStakeWinInput" data-test-id="Betslip-StakeWinInput"><div class="inputContainer-Zj_WvNK9zc">
+      <div class="inputBox-Dli1iDw9gB"><input id="stake" aria-label="Currency Input" type="text" placeholder="Stake"></div>
+      <div class="inputBox-Dli1iDw9gB"><input id="win" aria-label="Currency Input" type="text" placeholder="Win"></div></div></div>
+  </div></div></div>
+  <div><span id="t-pay">Payout</span> <span id="pay">BRL 0.00</span></div>
+  <button id="place" class="placeBetButton"><span id="t-place">Place Bets</span></button>
+</aside>
+<script>
+const PT = /[?&]lang=pt/.test(location.search);
+const T = PT ? { slip: 'BOLETIM DE APOSTAS', my: 'MINHAS APOSTAS', singles: 'SIMPLES', pay: 'Pagamento', place: 'Fazer apostas', ws: 'Money Line – Jogo – MLB', ok: 'Aceitar aposta', stake: 'Risco', win: 'Ganho', reuse: 'Reutilizar seleção' }
+                : { slip: 'BET SLIP', my: 'MY BETS', singles: 'SINGLES', pay: 'Payout', place: 'Place Bets', ws: 'Money Line – Game – MLB', ok: 'Bet Accepted', stake: 'Stake', win: 'Win', reuse: 'Reuse selections' };
+if (PT) document.documentElement.lang = 'pt-BR';
+const g = (id) => document.getElementById(id);
+g('t-slip').textContent = T.slip; g('t-my').textContent = T.my; g('t-singles').textContent = T.singles; g('t-pay').textContent = T.pay; g('t-place').textContent = T.place; g('ws').textContent = T.ws;
+g('stake').addEventListener('input', () => { const v = parseFloat(g('stake').value.replace(',', '.')) || 0; g('win').value = (v * 0.684).toFixed(2); g('pay').textContent = 'BRL ' + (v * 1.684).toFixed(2); });
+g('place').addEventListener('click', () => { const v = (parseFloat(g('stake').value.replace(',', '.')) || 0).toFixed(2), w = (v * 0.684).toFixed(2);
+  setTimeout(() => { g('rc').innerHTML = '<div class="receipt"><div><b>' + T.ok + '</b></div><div><b>#3128663429</b></div><div><b>' + T.stake + '</b> BRL ' + v + '</div><div><b>' + T.win + '</b> BRL ' + w + '</div><hr><div><u>' + T.reuse + '</u></div></div>'; }, 900); });
+</script></body></html>

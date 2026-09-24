@@ -16,10 +16,12 @@
    ===================================================== */
 (function () {
   "use strict";
-  if (window.__dblWatch) return;
-  window.__dblWatch = true;
-
   var api = globalThis.browser || globalThis.chrome;
+  // After an update the old copy in an open tab is cut off from the extension ("orphaned"):
+  // it may still be here, but it can't report anything. Only a live copy blocks a new one.
+  function alive() { try { return !!(api && api.runtime && api.runtime.id); } catch (_) { return false; } }
+  if (typeof window.__dblWatch === "function" && window.__dblWatch()) return;
+  window.__dblWatch = alive;
   var P = globalThis.DBL_PARSE, X = globalThis.DBL_EXTRACT;
   var WINDOW_MS = 20000, CLEARED_STABLE_MS = 1500, TICK_MS = 350, SAME_PRESS_MS = 2500;
   // kind: "sportsbook" | "exchange" | "prediction" — a first guess from this frame's address,
@@ -37,12 +39,14 @@
 
   /* ---------- 1. the press ---------- */
   function onPress(e) {
+    if (retireIfOrphaned()) return;
     if (e.type === "pointerdown" && e.button !== 0) return;
     var btn = X.placeTarget(e.target, cfg.kind);
     if (!btn) return;
     begin(btn, (btn.innerText || btn.getAttribute("aria-label") || "").trim().slice(0, 40));
   }
   function onKey(e) {
+    if (retireIfOrphaned()) return;
     if (e.key !== "Enter" || !e.target || e.target.tagName !== "INPUT") return;
     var slip = X.slipFromElement(e.target, cfg.fmt, cfg.kind);
     if (!slip || !slipHasPlaceControl(slip)) return;
@@ -79,6 +83,12 @@
   window.addEventListener("pointerdown", onPress, true);
   window.addEventListener("click", onPress, true);
   window.addEventListener("keydown", onKey, true);
+  // an orphaned copy steps aside on the next press
+  function retireIfOrphaned() {
+    if (alive()) return false;
+    window.removeEventListener("pointerdown", onPress, true); window.removeEventListener("click", onPress, true); window.removeEventListener("keydown", onKey, true);
+    return true;
+  }
 
   /* ---------- 2. watch for the outcome ---------- */
   function start(snap, slip) {

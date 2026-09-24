@@ -413,6 +413,30 @@ function serve(dir, port) {
   check("test snapshot (no slip, whole page): number kept; password, e-mail and typed name never recorded",
     snapObj.slipFound === false && /12,50/.test(snapTxt) && !/hunter2secret|me@example\.com|João Silva/.test(snapTxt) && /not recorded/.test(snapTxt), snapTxt.length + " chars");
 
+  /* 18c. Pinnacle (structure from pinnacle.com; receipts as on the user's pinnacle.bet.br screenshots) */
+  for (const lg of ["en", "pt"]) {
+    await page.goto("http://localhost:8766/pinnacle.html" + (lg === "pt" ? "?lang=pt" : "")); await sleep(800);
+    await page.click("#pick"); await page.fill("#stake", lg === "pt" ? "2" : "1"); await sleep(200); await page.click("#place"); await sleep(3200);
+    q = (await queue()).queue;
+    const pin = q.find((x) => x.bet.side === "New York Yankees" && x.bet.stake === (lg === "pt" ? 2 : 1));
+    check("Pinnacle (" + lg + "): detected with receipt '" + (lg === "pt" ? "Aceitar aposta" : "Bet Accepted") + "', Stake + Win boxes read right",
+      pin && pin.status === "placed" && pin.signal === "receipt" && pin.bet.odds === 1.684 && pin.bet.teamA === "Tampa Bay Rays" && pin.bet.teamB === "New York Yankees" && /^Money Line – (Game|Jogo) – MLB$/.test(pin.bet.market) && pin.bet.currency === "BRL" && pin.checks.returnMatch === true,
+      pin && JSON.stringify({ st: pin.status, sg: pin.signal, o: pin.bet.odds, s: pin.bet.stake, ev: pin.bet.teamA + "|" + pin.bet.teamB, mk: pin.bet.market, cur: pin.bet.currency, c: pin.checks }));
+  }
+
+  /* 18d. A tab that was open before the extension was installed / updated gets the watcher injected; no double watcher */
+  await bgRun(() => chrome.scripting.unregisterContentScripts());
+  await page.goto("http://localhost:8766/de-slip.html"); await sleep(800);
+  const bare = await page.evaluate(() => typeof window.__dblApi);
+  await bgRun(() => __dblTest.injectOpenTabs());
+  await bgRun(() => __dblTest.injectOpenTabs()); // twice: the second copy must stand down
+  await sleep(500);
+  const qi = (await queue()).queue.length;
+  await page.fill("#stake", "3,00"); await page.click("#place"); await sleep(3000);
+  const qi2 = (await queue()).queue.filter((x) => x.bet.side === "Bayern München" && x.bet.stake === 3).length;
+  check("tab open before install/update: watcher injected, bet detected once", bare === "undefined" && qi2 === 1 && (await queue()).queue.length === qi + 1, JSON.stringify({ bare, found: qi2 }));
+  await bgRun(() => HANDLERS["save-settings"]({ settings: { mode: "list" } })); await bgRun(() => HANDLERS["save-settings"]({ settings: { mode: "auto" } })); // re-register
+
   /* 19. The new interface languages */
   for (const lg of ["fr", "ru"]) {
     await bgRun((lg) => HANDLERS["save-settings"]({ settings: { lang: lg } }), lg);

@@ -481,10 +481,24 @@ var HANDLERS = {
   }
 };
 // exposed for the end-to-end test (the notification buttons can't be clicked from a test)
-globalThis.__dblTest = { onNoteButton: onNoteButton, onNoteClick: onNoteClick };
+globalThis.__dblTest = { onNoteButton: onNoteButton, onNoteClick: onNoteClick, injectOpenTabs: injectOpenTabs };
 
 /* ---------- lifecycle ---------- */
-api.runtime.onInstalled.addListener(function () { syncRegistrations(); badge(); });
+// Chrome doesn't put content scripts into tabs that were already open when the extension was
+// installed or updated: without this, a sportsbook tab left open during an update detects
+// nothing until it is reloaded.
+function injectOpenTabs() {
+  return load().then(function (st) {
+    return api.tabs.query({ url: ["http://*/*", "https://*/*"] }).then(function (tabs) {
+      return Promise.all(tabs.map(function (t) {
+        var host = ""; try { host = new URL(t.url).hostname; } catch (_) {}
+        if (!host || /(^|\.)doinp\.com\.br$/.test(host) || !siteActive(st, host)) return null;
+        return api.scripting.executeScript({ target: { tabId: t.id, allFrames: true }, files: WATCH_FILES }).catch(function () {});
+      }));
+    });
+  }).catch(function (e) { console.warn("[bet-logger] inject into open tabs failed", e); });
+}
+api.runtime.onInstalled.addListener(function () { syncRegistrations().then(injectOpenTabs); badge(); });
 api.runtime.onStartup.addListener(function () { syncRegistrations(); badge(); });
 if (api.permissions && api.permissions.onRemoved) api.permissions.onRemoved.addListener(function () { syncRegistrations(); });
 if (api.permissions && api.permissions.onAdded) api.permissions.onAdded.addListener(function () { syncRegistrations(); });

@@ -79,9 +79,11 @@
   "order submitted",
   "trade executed",
   "bets placed",
+  "bet(s) placed",
   "bet matched",
   "matched",
-  "unmatched"
+  "unmatched",
+  "accepted bet"
  ],
  "error": [
   "order failed",

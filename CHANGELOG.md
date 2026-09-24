@@ -2,6 +2,21 @@
 
 Newest first.
 
+## 0.7.1 · Pinnacle, and tabs left open during an update
+
+- **Tabs open during an install or update now work.** Chrome doesn't put a new or updated
+  extension into tabs that are already open. The old copy in such a tab can't report anything,
+  so a sportsbook left open during an update detected nothing until the page was reloaded. The
+  extension now injects itself into open tabs when installed or updated, and an old copy steps
+  aside.
+- **Pinnacle:**
+  - Receipts now recognised: pinnacle.bet.br's "Aceitar aposta" and "Aposta aceita", and "1
+    aposta(s) realizada(s)" / "1 Bet(s) Placed".
+  - The stake label "Risco" is now read.
+  - "Win" / "Ganho" is read as the winnings (stake × (odds − 1)) rather than the return, so the
+    return check passes.
+  - Tested on a page that copies pinnacle.com's real slip (Stake and Win boxes, Payout).
+
 ## 0.7.0
 
 See the README: exchanges (back / lay, liability, commission), prediction markets (Polymarket, Kalshi), detection words in 13 languages, 5 more interface languages (fr, tr, pl, ru, nl), open-source release with a no-network guarantee.

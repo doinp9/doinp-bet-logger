@@ -69,9 +69,19 @@
  "receipt": [
   "ordem enviada",
   "ordem executada",
-  "aposta correspondida"
+  "aposta correspondida",
+  "aposta(s) realizada(s)",
+  "aceitar aposta",
+  "aposta aceita"
  ],
  "error": [
-  "saldo insuficiente para"
+  "saldo insuficiente para",
+  "fundos insuficientes",
+  "aposta não aceita",
+  "aposta rejeitada",
+  "probabilidades alteradas"
+ ],
+ "stake": [
+  "risco"
  ]
 };

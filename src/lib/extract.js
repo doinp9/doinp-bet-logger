@@ -374,7 +374,12 @@
       var s0 = sels[0];
       var st = s0.stake || slipStake;
       bets.push(betFrom(s0, st));
-      if (ret != null && st) { checks.returnMatch = P.near(ret, st * s0.odds); checks.basis = "potential"; checks.ret = ret; checks.expected = P.r3(st * s0.odds); }
+      if (ret != null && st) {
+        // some books show the winnings ("Win", "Ganho": stake × (odds − 1)) instead of the return
+        var profitOnly = !P.near(ret, st * s0.odds) && P.near(ret, st * (s0.odds - 1));
+        var retTotal = profitOnly ? P.r2(ret + st) : ret;
+        checks.returnMatch = P.near(retTotal, st * s0.odds); checks.basis = "potential"; checks.ret = retTotal; checks.expected = P.r3(st * s0.odds);
+      }
     } else {
       var perCard = sels.filter(function (s) { return s.stake; }).length;
       var sumSingles = sels.reduce(function (a, s) { return a + (s.stake || slipStake || 0) * s.odds; }, 0);
