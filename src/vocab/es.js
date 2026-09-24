@@ -9,6 +9,19 @@
    that are NOT a place button), months, today, yesterday, and for exchanges and prediction
    markets: back, lay, liability, yes, no, buy, sell, toWin, shares, avgPrice, fee, pmPlace. */
 (globalThis.DBL_VOCAB = globalThis.DBL_VOCAB || {})["es"] = {
+ "placeVerb": [
+  "realizar",
+  "hacer",
+  "confirmar",
+  "colocar",
+  "enviar",
+  "efectuar"
+ ],
+ "betNoun": [
+  "apuesta",
+  "apuestas",
+  "boleto"
+ ],
  "place": [
   "realizar apuesta",
   "realizar apuestas",

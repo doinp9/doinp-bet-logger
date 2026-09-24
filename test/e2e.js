@@ -413,16 +413,33 @@ function serve(dir, port) {
   check("test snapshot (no slip, whole page): number kept; password, e-mail and typed name never recorded",
     snapObj.slipFound === false && /12,50/.test(snapTxt) && !/hunter2secret|me@example\.com|João Silva/.test(snapTxt) && /not recorded/.test(snapTxt), snapTxt.length + " chars");
 
-  /* 18c. Pinnacle (structure from pinnacle.com; receipts as on the user's pinnacle.bet.br screenshots) */
+  /* 18c. Pinnacle: slip structure from pinnacle.com, buttons and receipts from the user's pinnacle.bet.br screenshots */
+  const pinBet = (stake) => queue().then((st) => st.queue.find((x) => x.bet.side === "New York Yankees" && x.bet.stake === stake));
   for (const lg of ["en", "pt"]) {
     await page.goto("http://localhost:8766/pinnacle.html" + (lg === "pt" ? "?lang=pt" : "")); await sleep(800);
-    await page.click("#pick"); await page.fill("#stake", lg === "pt" ? "2" : "1"); await sleep(200); await page.click("#place"); await sleep(3200);
-    q = (await queue()).queue;
-    const pin = q.find((x) => x.bet.side === "New York Yankees" && x.bet.stake === (lg === "pt" ? 2 : 1));
-    check("Pinnacle (" + lg + "): detected with receipt '" + (lg === "pt" ? "Aceitar aposta" : "Bet Accepted") + "', Stake + Win boxes read right",
+    await page.fill("#stake", lg === "pt" ? "2" : "1"); await sleep(200); await page.click("#place"); await sleep(3200);
+    const pin = await pinBet(lg === "pt" ? 2 : 1);
+    check("Pinnacle (" + lg + "): '" + (lg === "pt" ? "CONFIRMAR 1 SIMPLES APOSTA" : "CONFIRM 1 SINGLE BET") + "' recognised, receipt '" + (lg === "pt" ? "Aceitar aposta" : "Bet Accepted") + "'",
       pin && pin.status === "placed" && pin.signal === "receipt" && pin.bet.odds === 1.684 && pin.bet.teamA === "Tampa Bay Rays" && pin.bet.teamB === "New York Yankees" && /^Money Line – (Game|Jogo) – MLB$/.test(pin.bet.market) && pin.bet.currency === "BRL" && pin.checks.returnMatch === true,
       pin && JSON.stringify({ st: pin.status, sg: pin.signal, o: pin.bet.odds, s: pin.bet.stake, ev: pin.bet.teamA + "|" + pin.bet.teamB, mk: pin.bet.market, cur: pin.bet.currency, c: pin.checks }));
   }
+  // a button wording nobody listed: caught from the confirmation, then learned for this site
+  await page.goto("http://localhost:8766/pinnacle.html?btn=" + encodeURIComponent("LET'S GO")); await sleep(800);
+  await page.fill("#stake", "3"); await sleep(200); await page.click("#place"); await sleep(3500);
+  const unk = await pinBet(3);
+  const trU = (await bgRun(() => chrome.storage.local.get("trace"))).trace || [];
+  check("unknown button: bet caught from the confirmation alone", unk && unk.status === "placed" && unk.bet.odds === 1.684 && trU.some((e) => /receipt without a recognised press/.test(e.detail || "")), unk && JSON.stringify({ st: unk.status, sg: unk.signal }));
+  const sitesL = (await bgRun(() => chrome.storage.local.get("sites"))).sites;
+  check("unknown button: its label is learned for the site", sitesL.localhost && (sitesL.localhost.placeLabels || []).includes("let's go") && trU.some((e) => e.step === "learned"), JSON.stringify(sitesL.localhost && sitesL.localhost.placeLabels));
+  await page.goto("http://localhost:8766/pinnacle.html?btn=" + encodeURIComponent("LET'S GO")); await sleep(900);
+  await page.fill("#stake", "4"); await sleep(200); await page.click("#place"); await sleep(3200);
+  const trU2 = (await bgRun(() => chrome.storage.local.get("trace"))).trace || [];
+  check("learned button: the next press is recognised directly", !!(await pinBet(4)) && trU2.some((e) => e.step === "press" && /LET'S GO/.test(e.detail || "")), JSON.stringify(trU2.slice(0, 3).map((e) => e.step + ": " + e.detail)));
+  // a shop's "Place order" → "Order placed" never becomes a bet
+  const qShop = (await queue()).queue.length;
+  await page.goto("http://localhost:8766/shop.html"); await sleep(800);
+  await page.click("#buy"); await sleep(3000);
+  check("shop checkout ('Place order' → 'Order placed', prices like 1.99): nothing logged", (await queue()).queue.length === qShop, String((await queue()).queue.length - qShop));
 
   /* 18d. A tab that was open before the extension was installed / updated gets the watcher injected; no double watcher */
   await bgRun(() => chrome.scripting.unregisterContentScripts());

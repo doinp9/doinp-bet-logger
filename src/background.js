@@ -353,7 +353,18 @@ var HANDLERS = {
     try { if (sender && sender.tab && sender.tab.url) path = new URL(sender.tab.url).pathname; } catch (_) {}
     return load().then(function (st) {
       var s = siteFor(st.sites, host);
-      return { fmt: s ? s.fmt || "auto" : "auto", active: siteActive(st, host), kind: siteKind(s, host, path), commission: s && s.commission != null && s.commission !== "" ? +s.commission : null };
+      return { fmt: s ? s.fmt || "auto" : "auto", active: siteActive(st, host), kind: siteKind(s, host, path), commission: s && s.commission != null && s.commission !== "" ? +s.commission : null, learned: (s && s.placeLabels) || [] };
+    });
+  },
+  // a button pressed in a slip and followed by a confirmation becomes this site's place-bet label
+  "learn-place": function (m, sender) {
+    var host = topHost(sender, m.host), label = DBL_PARSE.norm(m.label || "");
+    if (!label || label.length > 48) return { ok: false };
+    return tx(function (st) {
+      var s = siteFor(st.sites, host);
+      if (!s) { var d = DBL_PARSE.baseDomain(host); s = st.sites[d] = { domain: d, book: DBL_PARSE.bookFromHost(host), extraDomains: [], fmt: "auto", state: "on", since: Date.now(), auto: true }; }
+      s.placeLabels = (s.placeLabels || []).filter(function (x) { return x !== label; }).concat([label]).slice(-10);
+      return { ok: true, learned: s.placeLabels };
     });
   },
   "trace": function (m, sender) {

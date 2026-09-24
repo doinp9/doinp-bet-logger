@@ -114,12 +114,13 @@
   function isPlaceButton(btn, kind) { return !!btn && P.isPlaceButton(buttonText(btn), kind); }
   // Climb from whatever was clicked to the element whose own short label says "place bet".
   // Works for <button>, role=button and plain <div>/<span> controls.
-  function placeTarget(el, kind) {
+  // learned: this site's own place-bet labels, learned from a press followed by a confirmation
+  function placeTarget(el, kind, learned) {
     for (var i = 0; el && el.nodeType === 1 && i < 7; i++, el = el.parentElement) {
       var label = el.getAttribute("aria-label") || el.getAttribute("title") || el.value || textOf(el);
       label = String(label || "").trim();
       if (label.length > 90) return null; // reached a container: stop
-      if (label && P.isPlaceButton(label, kind)) return el;
+      if (label && (P.isPlaceButton(label, kind) || (learned && learned.indexOf(P.norm(label)) >= 0))) return el;
     }
     return null;
   }
@@ -686,6 +687,18 @@
     return results;
   }
 
+  /* ---------- does a region look like a bet slip? (not a shop cart) ----------
+     A stake label in it ("Stake", "Risco", "Einsatz") or slip markup on it or its parents
+     ("betslip", "cupom", "boletim"). Used before trusting a confirmation with no recognised press. */
+  var SLIP_MARK = /bet.?slip|betslip|cupom|cupon|coupon|bilhete|boletim|wettschein|schedina|kupon|bet-?builder|slip/i;
+  function looksLikeSlip(region) {
+    for (var el = region, d = 0; el && el.nodeType === 1 && d < 7; el = el.parentElement, d++) {
+      var sig = [el.id, typeof el.className === "string" ? el.className : "", el.getAttribute("data-testid"), el.getAttribute("data-test-id"), el.getAttribute("data-test")].join(" ");
+      if (SLIP_MARK.test(sig)) return true;
+    }
+    return textOf(region).split(/\n+/).some(function (l) { var n = P.norm(P.clean(l)); return n.length < 40 && P.V.stakeLabel.test(n); });
+  }
+
   /* ---------- receipt region after a placement ---------- */
   function receiptRegion(node, fmt) {
     var start = node.nodeType === 3 ? node.parentElement : node;
@@ -724,6 +737,6 @@
     visible: visible, oddsNodes: oddsNodes, amountInputs: amountInputs, buttonLike: buttonLike, isPlaceButton: isPlaceButton, placeTarget: placeTarget, isMoney: isMoney,
     slipFromElement: slipFromElement, slipAuto: slipAuto, extractSlip: extractSlip, scanHistory: scanHistory, priceCount: priceCount,
     exchangeRows: exchangeRows, centsNodes: centsNodes, extractExchange: extractExchange, extractPrediction: extractPrediction,
-    receiptRegion: receiptRegion, skeleton: skeleton, pageLocale: pageLocale, textOf: textOf
+    receiptRegion: receiptRegion, skeleton: skeleton, looksLikeSlip: looksLikeSlip, pageLocale: pageLocale, textOf: textOf
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -254,6 +254,16 @@
   var AFTER_PLACE = "(?=$|[\\s\\d.,:()\\-])";
   var PLACE_X = vocabSrc("place", "start");
   var PLACE_X_RE = PLACE_X ? new RegExp(PLACE_X + AFTER_PLACE, "u") : null;
+  // Grammar, so wording no one listed still works: a verb, up to three words, a bet noun
+  // ("Confirm 1 single bet", "Confirmar 1 simples aposta", "Place 2 bets", "Fazer minhas apostas"),
+  // or noun first for German / Dutch / Turkish ("Wette jetzt platzieren", "Bahisleri onayla").
+  var VERBS = vocab("placeVerb").map(esc).join("|"), NOUNS = vocab("betNoun").map(esc).join("|");
+  var MID = "(?:\\s+[\\p{L}\\p{N}()'\u2019.]+)";
+  var PLACE_GRAMMAR = VERBS && NOUNS ? new RegExp("^(?:(?:" + VERBS + ")" + MID + "{0,3}?\\s+(?:" + NOUNS + ")|(?:" + NOUNS + ")" + MID + "{0,2}?\\s+(?:" + VERBS + "))" + AFTER_PLACE, "u") : null;
+  // a text that talks about a bet ("Bet Accepted", "Aceitar aposta", "投注成功") — a shop's "Order placed" doesn't
+  var BET_NOUN_RE = NOUNS ? new RegExp(alt(vocab("betNoun")), "u") : /(?!)/;
+  function hasBetNoun(text) { return BET_NOUN_RE.test(norm(text)); }
+  var PLACE_VERB_START = new RegExp("^(?:" + (VERBS || "(?!)") + ")(?![\\p{L}])", "u");
   var PM_PLACE_SRC = vocabSrc("pmPlace", "start");
   var PM_PLACE_RE = PM_PLACE_SRC ? new RegExp(PM_PLACE_SRC + AFTER_PLACE, "u") : null;
   var HISTORY_LINK = widen(/minhas apostas|my bets|historico|history|apostas abertas|open bets/, "history", "any");
@@ -306,8 +316,10 @@
   function isPlaceButton(text, kind) {
     var n = norm(text);
     if (!n || n.length > 48) return false;
+    // "Fazer minhas apostas" is an action; "Minhas apostas" alone is the history link
+    if (PLACE_GRAMMAR && PLACE_VERB_START.test(n) && PLACE_GRAMMAR.test(n)) return true;
     if (HISTORY_LINK.test(n)) return false;
-    if (V.placePt.test(n) || V.placeEn.test(n) || (PLACE_X_RE && PLACE_X_RE.test(n))) return true;
+    if (V.placePt.test(n) || V.placeEn.test(n) || (PLACE_X_RE && PLACE_X_RE.test(n)) || (PLACE_GRAMMAR && PLACE_GRAMMAR.test(n))) return true;
     return kind === "prediction" && !!PM_PLACE_RE && PM_PLACE_RE.test(n);
   }
 
@@ -524,7 +536,7 @@
     V: V, statusOf: statusOf, isPlaceButton: isPlaceButton, halfResult: halfResult, isNoiseLine: isNoiseLine, stripTags: stripTags, inferResult: inferResult,
     splitEvent: splitEvent, lineOf: lineOf, findDate: findDate, localISO: localISO, localTime: localTime,
     baseDomain: baseDomain, bookFromHost: bookFromHost, originsFor: originsFor, near: near, product: product, r3: r3, r2: r2,
-    CUR_SRC: CUR_SRC, isDateLine: isDateLine, vocab: vocab, kindFor: kindFor, r4: r4, X: X,
+    CUR_SRC: CUR_SRC, isDateLine: isDateLine, vocab: vocab, kindFor: kindFor, r4: r4, X: X, hasBetNoun: hasBetNoun,
     exchangeOdds: exchangeOdds, exchangeSide: exchangeSide, liabilityLabel: liabilityLabel, exchangeProfit: exchangeProfit, inferExchange: inferExchange,
     centsPrice: centsPrice, isYesNo: isYesNo, pmLabel: pmLabel, inferPrediction: inferPrediction, trackerView: trackerView
   };

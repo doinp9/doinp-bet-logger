@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Shop (must never log a bet)</title></head><body>
+<!-- A shop checkout: prices that look like odds, an amount box, "Place order", then "Order placed". -->
+<div class="cart" id="cart"><div>Wireless headphones</div><div><span>1.99</span></div><label>Quantity <input id="qty" type="text" value="2"></label>
+<div>Total $3.98</div><button id="buy">Place order</button></div>
+<script>document.getElementById('buy').addEventListener('click',()=>setTimeout(()=>{document.getElementById('cart').insertAdjacentHTML('beforeend','<div>Order placed! Order #88123412</div>');},500));</script>
+</body></html>

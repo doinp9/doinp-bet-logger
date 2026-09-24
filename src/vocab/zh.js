@@ -9,6 +9,11 @@
    that are NOT a place button), months, today, yesterday, and for exchanges and prediction
    markets: back, lay, liability, yes, no, buy, sell, toWin, shares, avgPrice, fee, pmPlace. */
 (globalThis.DBL_VOCAB = globalThis.DBL_VOCAB || {})["zh"] = {
+ "betNoun": [
+  "投注",
+  "注单",
+  "下注"
+ ],
  "place": [
   "投注",
   "确认投注",

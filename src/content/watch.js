@@ -28,7 +28,9 @@
   // replaced by the extension's answer (the top page's address, or what you set in Settings)
   var cfg = { fmt: "auto", kind: P.kindFor(location.hostname, location.pathname), commission: null };
   function xopts() { return { fmt: cfg.fmt, kind: cfg.kind, commission: cfg.commission }; }
-  function applyConfig(c) { if (!c) return; cfg.fmt = c.fmt || cfg.fmt; if (c.kind) cfg.kind = c.kind; if ("commission" in c) cfg.commission = c.commission; }
+  function applyConfig(c) { if (!c) return; cfg.fmt = c.fmt || cfg.fmt; if (c.kind) cfg.kind = c.kind; if ("commission" in c) cfg.commission = c.commission; if (c.learned) cfg.learned = c.learned; }
+  // an unrecognised button pressed inside a bet slip; if a confirmation follows, its label is learned
+  var lastUnknown = null, lastFinish = 0;
   var pending = null;
   var lastPress = { el: null, t: 0 };
 
@@ -41,9 +43,20 @@
   function onPress(e) {
     if (retireIfOrphaned()) return;
     if (e.type === "pointerdown" && e.button !== 0) return;
-    var btn = X.placeTarget(e.target, cfg.kind);
-    if (!btn) return;
+    var btn = X.placeTarget(e.target, cfg.kind, cfg.learned);
+    if (!btn) { if (e.type === "click") noteUnknown(e.target); return; }
     begin(btn, (btn.innerText || btn.getAttribute("aria-label") || "").trim().slice(0, 40));
+  }
+  // a button inside a slip that has a stake typed in, whose label isn't a known place-bet label
+  function noteUnknown(target) {
+    var b = X.buttonLike(target);
+    if (!b) return;
+    var label = P.clean(b.innerText || b.value || b.getAttribute("aria-label") || "");
+    if (!label || label.length > 48 || !/\p{L}/u.test(label)) return;
+    var slip = X.slipFromElement(b, cfg.fmt, cfg.kind);
+    if (!slip || !X.looksLikeSlip(slip) || !X.amountInputs(slip).some(function (i) { return i.value > 0; })) return;
+    lastUnknown = { label: label, t: Date.now() };
+    trace("click", "\u201c" + label + "\u201d inside a slip \u00b7 not a known place-bet button (learned if a confirmation follows)");
   }
   function onKey(e) {
     if (retireIfOrphaned()) return;
@@ -64,6 +77,8 @@
     var slip = X.slipFromElement(anchor, cfg.fmt, cfg.kind);
     var snap = slip ? X.extractSlip(slip, xopts()) : null;
     if (snap && snap.skipped === "sell") { trace("press", label + " \u00b7 sell order: closes a position, not logged"); return; }
+    // a real slip has a stake typed in; a "Place your bets" banner over the odds grid doesn't
+    if (snap && snap.bets.length && !snap.bets.some(function (b) { return b.stake > 0; })) { trace("press", label + " \u00b7 no stake in the slip: not a placement"); return; }
     // the slip is read synchronously (before the page reacts); whether this site is
     // active is asked right after, and the watch is dropped silently if it isn't
     if (!snap || !snap.bets.length) {
@@ -129,6 +144,7 @@
     var p = pending;
     if (!p) return;
     pending = null;
+    lastFinish = Date.now();
     clearInterval(p.timer);
     p.obs.disconnect();
     if (kind === "inactive") return;
@@ -159,6 +175,48 @@
     var now = new Date();
     bg({ type: "suggest", status: status, signal: kind, bets: snap.bets, mode: snap.mode, checks: snap.checks,
       confidence: Math.max(0.05, Math.min(1, conf)), date: P.localISO(now), time: P.localTime(now), host: location.hostname });
+  }
+
+  /* ---------- 4. a confirmation with no recognised press ----------
+     If the place button wasn't recognised (a wording no one listed), the bet is still caught
+     when the book shows its confirmation inside the slip. Only on sportsbooks, only when the
+     confirmation area holds a price AND a stake, so an "Order placed" page in a shop never counts. */
+  var passiveBuf = [], passiveTimer = null;
+  var passive = new MutationObserver(function (muts) {
+    if (pending || cfg.kind !== "sportsbook") return;
+    for (var i = 0; i < muts.length; i++) muts[i].addedNodes.forEach(function (n) {
+      var t = n.nodeType === 3 ? n.nodeValue : n.nodeType === 1 ? (n.innerText || n.textContent || "") : "";
+      if (t && t.length < 600 && P.V.receipt.test(P.norm(t))) passiveBuf.push(n);
+    });
+    if (passiveBuf.length && !passiveTimer) passiveTimer = setTimeout(checkPassive, 700);
+  });
+  passive.observe(document.documentElement, { childList: true, subtree: true });
+  function checkPassive() {
+    passiveTimer = null;
+    var nodes = passiveBuf.splice(0, passiveBuf.length);
+    if (pending || Date.now() - lastFinish < 30000 || retireIfOrphaned()) return;
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      if (!document.documentElement.contains(node)) continue;
+      var rtext = node.nodeType === 3 ? node.nodeValue : node.innerText || "";
+      // the confirmation must talk about a bet and sit in something that looks like a bet slip
+      if (!P.hasBetNoun(rtext)) continue;
+      var region = X.receiptRegion(node, cfg.fmt);
+      if (!region || !X.looksLikeSlip(region)) continue;
+      var snap = X.extractSlip(region, xopts());
+      if (!snap || !snap.bets.length || !snap.bets.every(function (b) { return b.stake > 0; })) continue;
+      var text = P.clean(node.nodeType === 3 ? node.nodeValue : node.innerText || "").slice(0, 70);
+      var learned = lastUnknown && Date.now() - lastUnknown.t < 30000 ? lastUnknown.label : null;
+      lastUnknown = null; lastFinish = Date.now();
+      bg({ type: "site-config", host: location.hostname, path: location.pathname }).then(function (c) {
+        if (!c || !c.active) return;
+        trace("outcome", "receipt without a recognised press \u00b7 \u201c" + text + "\u201d \u00b7 " + snap.bets.map(function (b) { return (b.selection || "?") + " @ " + b.odds + " \u00d7 " + b.stake; }).join(" | "));
+        if (learned) bg({ type: "learn-place", host: location.hostname, label: learned }).then(function (r) { if (r && r.ok) { cfg.learned = r.learned; trace("learned", "\u201c" + learned + "\u201d is this site's place-bet button"); } });
+        var now = new Date();
+        bg({ type: "suggest", status: "placed", signal: "receipt", bets: snap.bets, mode: snap.mode, checks: snap.checks, confidence: Math.max(0.05, Math.min(1, snap.confidence)), date: P.localISO(now), time: P.localTime(now), host: location.hostname });
+      });
+      return;
+    }
   }
 
   /* ---------- API for the popup (scripting.executeScript, isolated world) ---------- */

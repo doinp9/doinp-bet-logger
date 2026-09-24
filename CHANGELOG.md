@@ -2,6 +2,27 @@
 
 Newest first.
 
+## 0.7.2 · place-bet buttons by grammar, confirmations as a second path, learning
+
+- **Cause of the Pinnacle miss:** its buttons read "CONFIRM 1 SINGLE BET" / "CONFIRMAR 1 SIMPLES
+  APOSTA". Only fixed phrases like "Confirm bet" were recognised, so the press was ignored.
+- **Buttons are recognised by grammar:** a place verb, up to three words, then a bet noun, in 10
+  languages. That covers "Confirm 1 single bet", "Place 2 bets", "Confirmar 3 apostas
+  múltiplas" and "Wette jetzt platzieren". History links ("My Bets", "Minhas apostas") still
+  never count.
+- **A click counts only if its slip has a stake typed in,** so a "Place your bets" banner never
+  becomes a bet.
+- **Second path: the confirmation.** If a book's button still isn't recognised, the bet is
+  caught when the book confirms it inside the slip. Both conditions are required:
+  - the confirmation mentions a bet ("Bet Accepted", "Aceitar aposta", …);
+  - the area looks like a bet slip (a stake label or slip markup).
+
+  A shop's "Place order" → "Order placed" is never logged (tested).
+- **Learning:** an unrecognised button pressed inside a slip and followed by a confirmation
+  becomes that site's place-bet button. Diagnostics shows the click and the learned label.
+- **Pinnacle's "Total Win" / "Total Ganho"** is read as winnings, so the return check works on
+  the logged-in slip.
+
 ## 0.7.1 · Pinnacle, and tabs left open during an update
 
 - **Tabs open during an install or update now work.** Chrome doesn't put a new or updated

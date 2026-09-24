@@ -9,6 +9,22 @@
    that are NOT a place button), months, today, yesterday, and for exchanges and prediction
    markets: back, lay, liability, yes, no, buy, sell, toWin, shares, avgPrice, fee, pmPlace. */
 (globalThis.DBL_VOCAB = globalThis.DBL_VOCAB || {})["en"] = {
+ "placeVerb": [
+  "place",
+  "confirm",
+  "submit",
+  "make"
+ ],
+ "betNoun": [
+  "bet",
+  "bets",
+  "wager",
+  "wagers"
+ ],
+ "ret": [
+  "total win",
+  "win"
+ ],
  "back": [
   "back",
   "back (bet for)",

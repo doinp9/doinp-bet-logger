@@ -9,7 +9,7 @@ It reads pages. It never clicks, types, submits or sends anything, and it has no
 **It collects no data:** everything stays in your browser. The code is here so you can check.
 Portuguese install guide: [LEIA-ME.md](LEIA-ME.md).
 
-Version 0.7.1 · [changelog](CHANGELOG.md) · [privacy](PRIVACY.md) · MIT license
+Version 0.7.2 · [changelog](CHANGELOG.md) · [privacy](PRIVACY.md) · MIT license
 
 ---
 
@@ -81,7 +81,14 @@ yet.**
 ## How it works
 
 1. **You bet as usual.** When you press the place-bet control, the extension reads the slip
-   before the page reacts. It then watches for up to 20 seconds:
+   before the page reacts.
+   - **How the control is recognised:** by the words on it, using a grammar rather than fixed
+     phrases. A place verb, up to three words, then a bet noun: "Confirm 1 single bet",
+     "Confirmar 1 simples aposta", "Wette platzieren".
+   - **If a book's wording still isn't recognised:** the bet is caught from the book's
+     confirmation inside the slip. That button is then learned for that site.
+
+   After the press, it watches for up to 20 seconds:
    - a receipt ("Bet placed", "Aposta realizada", "Wette platziert", "Order filled", …) or the
      slip clearing → **confirmed**;
    - an error ("insufficient balance", "odds changed", …) → nothing is logged;
@@ -178,7 +185,7 @@ commission; each is within 0.01 of the exact profit. The raw figures travel alon
 | | Status |
 |---|---|
 | Bet365 (Portuguese): slip, notification, My Bets | Tested on the real site by the maintainer. |
-| Pinnacle | Slip structure read from pinnacle.com (logged out). The receipts are taken from pinnacle.bet.br screenshots. pinnacle.bet.br itself blocks the test machine, so its logged-in button wording isn't confirmed. |
+| Pinnacle | Slip structure read from pinnacle.com (logged out). The logged-in buttons and receipts come from pinnacle.bet.br screenshots: "CONFIRM 1 SINGLE BET" / "CONFIRMAR 1 SIMPLES APOSTA", "Bet Accepted" / "Aceitar aposta". Tested on a copy of that page, not on the live site: pinnacle.bet.br blocks the test machine. |
 | Polymarket order ticket | Structure read from the live site (logged out, 24 Sep 2026). The confirmation text after "Trade" couldn't be seen without an account; "Order filled" is assumed. If it differs, the bet is still caught when the ticket clears, or kept as unconfirmed. |
 | Betfair exchange, Kalshi | Both block automated access from the test machine. The wording comes from their help pages, and the page layouts in the tests are invented. |
 | Detection words other than Portuguese / English | Generic betting vocabulary. Not yet checked against each book's exact labels. |
@@ -211,7 +218,7 @@ If a site isn't detected:
 
 ```
 node --test test/unit.test.js test/markets.test.js       # 23 tests, no browser needed
-xvfb-run node test/e2e.js <path-to-website-repo>          # 65 end-to-end checks in Chromium
+xvfb-run node test/e2e.js <path-to-website-repo>          # 69 end-to-end checks in Chromium
 ```
 
 The end-to-end test loads the unpacked extension in Chromium and drives the synthetic pages in
