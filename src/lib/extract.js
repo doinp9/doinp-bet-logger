@@ -617,8 +617,144 @@
     }
     return null;
   }
+  /* ---------- bet histories laid out as a table with column headers ----------
+     (Pinnacle's "Histórico de apostas": # | Produto | Detalhe | Seleção | Probabilidades |
+     Aposta (BRL) | Vitória/derrota | Status). Every value is read from its own column, found by
+     the header's horizontal position, so it works for <table> and for div grids alike. Without
+     this, a win's profit ("127.88") sitting on the row looks like a second price. */
+  var COL = {
+    odds: /^(odds?|probabilidades?|cotac(ao|oes)|cotas?|cuotas?|cotes?|quotes?|quota|kurs[e]?|oran|coef|коэф|赔率|オッズ|배당)/,
+    stake: /^(stake|risk|risco|apostas?(\s|\(|$)|apostado|valor|importe|mise|einsatz|puntata|importo|inzet|stawka|tutar|сумма|投注额|金额|賭け金|ベット額)/,
+    pl: /^(win\s*\/\s*loss|w\s*\/\s*l|profit|p\s*\/\s*l|p&l|vitoria\s*\/\s*derrota|lucro|ganancia|gewinn|profitto|winst|zysk|kar|прибыль|盈亏|損益)/,
+    ret: /^(returns?|retorno|payout|pagamento|devolucion|auszahlung|vincita)/,
+    status: /^(status|estado|resultado|results?|outcome|stato|durum|статус|结果|結果)/,
+    sel: /^(selection|selecao|seleccion|auswahl|selezione|selectie|wybor|secim|выбор|pick|palpite)/,
+    detail: /^(details?|detalhes?|detalle|dettagli|date|data|fecha|datum)/
+  };
+  function colRole(t) {
+    var n = P.norm(t);
+    if (!n || n.length > 30) return null;
+    for (var k in COL) if (COL[k].test(n)) return k;
+    return null;
+  }
+  function leafTexts(root) {
+    var out = [], w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) {
+      var t = n.nodeValue.trim(), pe = n.parentElement;
+      if (!t || !pe || SKIP_TAGS[pe.tagName.toUpperCase()]) continue;
+      var rg = document.createRange(); rg.selectNodeContents(n);
+      var r = rg.getBoundingClientRect();
+      if (!r.width && !r.height) continue;
+      out.push({ node: n, text: t, x: (r.left + r.right) / 2, left: r.left, right: r.right, top: r.top, bottom: r.bottom });
+    }
+    return out;
+  }
+  function findHeaderRow() {
+    // candidate header labels, grouped by the line they sit on
+    var cands = leafTexts(document.body).filter(function (x) { return colRole(x.text); });
+    var groups = [];
+    cands.forEach(function (c) {
+      var g = groups.filter(function (g) { return Math.abs(g.top - c.top) < 8; })[0];
+      if (g) g.items.push(c); else groups.push({ top: c.top, items: [c] });
+    });
+    for (var i = 0; i < groups.length; i++) {
+      var roles = groups[i].items.map(function (x) { return colRole(x.text); });
+      if (roles.indexOf("odds") < 0 || roles.indexOf("stake") < 0) continue;
+      if (roles.indexOf("sel") < 0 && roles.indexOf("status") < 0 && roles.indexOf("pl") < 0) continue;
+      // the header row: the smallest element holding all these labels; every text in it is a column
+      var row = groups[i].items[0].node.parentElement;
+      while (row && !groups[i].items.every(function (x) { return row.contains(x.node); })) row = row.parentElement;
+      if (!row) continue;
+      // the header cells (a table's <th>, a grid's cell divs) give each column its full width,
+      // so right-aligned values still land in their own column
+      while (row.children.length === 1) row = row.children[0];
+      var lineTop = groups[i].top;
+      // only the cells on the header's line (a CSS grid keeps header and data cells as siblings)
+      var cols = Array.prototype.filter.call(row.children, function (cell) { var r = cell.getBoundingClientRect(); return r.top <= lineTop + 2 && r.bottom >= lineTop; }).map(function (cell) {
+        var r = cell.getBoundingClientRect(), t = P.clean(textOf(cell));
+        return { text: t, role: colRole(t), from: r.left, to: r.right, x: (r.left + r.right) / 2, bottom: r.bottom };
+      }).filter(function (c) { return c.to > c.from; }).sort(function (a, b) { return a.from - b.from; });
+      if (cols.filter(function (c) { return c.role; }).length < 3) continue;
+      return { el: row, cols: cols, bottom: Math.max.apply(null, cols.map(function (c) { return c.bottom; })) };
+    }
+    return null;
+  }
+  function scanHistoryGrid(opts) {
+    var hdr = findHeaderRow();
+    if (!hdr) return null;
+    var fmt = opts.fmt || "auto", locale = opts.locale || pageLocale(), mf = monthFirst();
+    var colOf = function (x) {
+      for (var i = 0; i < hdr.cols.length; i++) if (x >= hdr.cols[i].from && x < hdr.cols[i].to) return hdr.cols[i];
+      return hdr.cols.slice().sort(function (a, b) { return Math.abs(a.x - x) - Math.abs(b.x - x); })[0];
+    };
+    var oddsCol = hdr.cols.filter(function (c) { return c.role === "odds"; })[0];
+    var stakeHdr = hdr.cols.filter(function (c) { return c.role === "stake"; })[0];
+    var hdrCur = (stakeHdr && stakeHdr.text.match(/\b(BRL|USD|EUR|GBP|R\$)\b/) || [])[1];
+    // one row per price in the odds column, below the header: the largest element holding just that price
+    var prices = leafTexts(document.body).filter(function (x) { return x.top > hdr.bottom && x.x >= oddsCol.from && x.x < oddsCol.to && P.exactOdds(x.text, fmt) != null; });
+    var rowsSeen = [], results = [];
+    prices.forEach(function (pr) {
+      var row = pr.node.parentElement;
+      while (row.parentElement && row.parentElement !== document.body && prices.filter(function (o) { return row.parentElement.contains(o.node); }).length === 1) row = row.parentElement;
+      if (rowsSeen.indexOf(row) >= 0) return;
+      rowsSeen.push(row);
+      // this row's text, column by column, top to bottom
+      var cells = {};
+      // a table row spans every column; a grid "row" is only this cell: then take the row's band across the grid
+      var rr = row.getBoundingClientRect(), span = hdr.cols[hdr.cols.length - 1].to - hdr.cols[0].from;
+      var texts = rr.width >= span * 0.6 ? leafTexts(row) : leafTexts(hdr.el).filter(function (t) { return t.top >= rr.top - 2 && t.bottom <= rr.bottom + 2 && t.top > hdr.bottom; });
+      texts.forEach(function (t) { var c = colOf(t.x); if (c && c.role) (cells[c.role] = cells[c.role] || []).push(t.text); });
+      var oddsList = (cells.odds || []).map(function (l) { return P.exactOdds(l, fmt); }).filter(function (v) { return v != null; });
+      if (!oddsList.length) return;
+      var num = function (lines, signed) {
+        for (var i = 0; i < (lines || []).length; i++) {
+          var m = lines[i].replace(/−/g, "-").match(/([+\-])?\s*(?:[A-Z]{3}|R\$|\$|€|£)?\s*(\d[\d.,]*)/);
+          if (m) { var v = P.parseNumber(m[2], "amount", locale); if (v != null) return signed && m[1] === "-" ? -v : v; }
+        }
+        return null;
+      };
+      var stake = num(cells.stake), pl = num(cells.pl, true), ret = num(cells.ret);
+      var statusLines = cells.status || [], label = null;
+      for (var s = 0; s < statusLines.length && !label; s++) label = P.statusOf(statusLines[s]);
+      var rowText = textOf(row);
+      // selection column: selection, "A -vs- B", market (maybe "AO VIVO …"), "League @ date"
+      var selLines = (cells.sel || []).map(P.clean), live = false, sel = "", ev = null, market = "";
+      selLines.forEach(function (l) {
+        if (l.length < 16 && P.V.live.test(P.norm(l))) { live = true; return; } // a separate "AO VIVO" tag
+        var lv = l.replace(/^(ao vivo|live|en vivo|in-play|em jogo)\s+/i, "");
+        if (lv !== l) { live = true; l = lv; }
+        if (/@\s*\d{4}-\d{2}-\d{2}/.test(l) || P.isDateLine(l)) return; // "Espanha - La Liga @ 2026-05-03"
+        if (!ev && P.splitEvent(l)) { ev = P.splitEvent(l); return; }
+        if (!sel) { sel = P.stripTags(l); return; }
+        if (!market) market = l;
+      });
+      var odds = oddsList.length > 1 ? P.r3(P.product(oddsList)) : oddsList[0];
+      var when = null;
+      (cells.detail || []).some(function (l) { var d = P.findDate(l, new Date(), mf); if (d && d.time) { when = d; return true; } return false; });
+      when = when || P.findDate(rowText, new Date(), mf) || dateAbove(row, rowsSeen, mf) || {};
+      var bet = { teamA: ev ? ev.teamA : "", teamB: ev ? ev.teamB : "", event: ev ? ev.teamA + " x " + ev.teamB : "", market: market, selection: sel, line: P.lineOf(sel), live: live,
+        odds: odds, stake: stake, isParlay: oddsList.length > 1, legs: oddsList.length > 1 ? oddsList.map(function (o) { return { event: "", market: "", sel: "", odds: o }; }) : [] };
+      // result: the site's word, proven by the money (return = stake + profit/loss)
+      var result = P.halfResult(rowText) || label || "pending", checks = { returnMatch: null };
+      var back = ret != null ? ret : pl != null && stake != null ? P.r2(stake + pl) : null;
+      if (result !== "pending" && result !== "cashout" && back != null && stake) {
+        var inf = P.inferResult(stake, odds, back, result);
+        if (inf) { result = inf.result; checks = { returnMatch: true, basis: inf.result, ret: back, expected: inf.expected }; }
+        else checks = { returnMatch: false, basis: result, ret: back, expected: P.r3(stake * odds) };
+      } else if (result === "pending" && stake) checks = { returnMatch: null };
+      bet.result = result;
+      bet.returned = result === "cashout" ? back : null;
+      bet.currency = fixCur(hdrCur === "R$" ? "BRL" : hdrCur || (P.findAmounts(rowText, locale)[0] || {}).currency || null);
+      bet.date = when.date || ""; bet.time = when.time || "";
+      results.push({ bet: bet, checks: checks, confidence: (stake ? 0.5 : 0.3) + (bet.date ? 0.15 : 0) + (checks.returnMatch ? 0.25 : 0) + (sel ? 0.05 : 0) });
+    });
+    return results.length ? results : null;
+  }
+
   function scanHistory(opts) {
     opts = opts || {};
+    // a history table with column headers is read column by column
+    if (opts.kind !== "exchange") { var grid = scanHistoryGrid(opts); if (grid) return grid; }
     var fmt = opts.kind === "exchange" && (!opts.fmt || opts.fmt === "auto") ? "exchange" : opts.fmt || "auto", locale = opts.locale || pageLocale(), mf = monthFirst();
     var scope = document.body;
     var stats = statusNodes(scope);

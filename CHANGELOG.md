@@ -2,6 +2,25 @@
 
 Newest first.
 
+## 0.7.3 · bet histories laid out as tables (Pinnacle)
+
+- **Pinnacle's "Histórico de apostas" was read wrong,** because it is a table with column
+  headers and the reader treated each row as a free-form card. Four symptoms:
+  - A win's profit ("127.88") looked like a second price, so wins came out as 2-leg parlays
+    (1.775 × 127.88 = 226.99) and were marked lost.
+  - Titles collected every cell on the row ("9 Apostas esportivas Futebol Wolverhampton…").
+  - "A -vs- B" teams weren't split.
+  - "AO VIVO" and the score "[0-0]" stayed in the market and the selection.
+- **New column reader.** When a history page has a header row with odds and stake columns
+  ("Probabilidades", "Aposta (BRL)", plus Seleção / Status / Vitória-derrota), every value is
+  read from its own column. This works for `<table>` and for div grids.
+- **Results are proven by the money:** return = stake + profit/loss, checked against the
+  odds.
+- **Pending bets still settle:** a pending bet saved earlier is settled by the history and not
+  duplicated.
+- **Also fixed:** "Team -vs- Team" is split, the live tag sets the live flag, and bracketed
+  scores are removed from selections.
+
 ## 0.7.2 · place-bet buttons by grammar, confirmations as a second path, learning
 
 - **Cause of the Pinnacle miss:** its buttons read "CONFIRM 1 SINGLE BET" / "CONFIRMAR 1 SIMPLES

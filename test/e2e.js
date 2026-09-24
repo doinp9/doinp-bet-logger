@@ -441,6 +441,32 @@ function serve(dir, port) {
   await page.click("#buy"); await sleep(3000);
   check("shop checkout ('Place order' → 'Order placed', prices like 1.99): nothing logged", (await queue()).queue.length === qShop, String((await queue()).queue.length - qShop));
 
+  /* 18e. Pinnacle bet history (table with column headers; the user's screenshot) */
+  // a Villarreal bet saved while pending must be settled by the history, not duplicated
+  const held = await bgRun(async () => {
+    const r = await HANDLERS["add-items"]({ host: "localhost", payload: { status: "manual", date: "2026-05-02", time: "08:31", bets: [{ selection: "Villarreal", teamA: "Villarreal", teamB: "Levante", market: "Partida 1X2", odds: 1.775, stake: 165, currency: "BRL" }] } });
+    const st = await chrome.storage.local.get("queue"); const it = st.queue.find((x) => x.bet.side === "Villarreal");
+    await HANDLERS.save({ ids: [it.id] }); return it.id;
+  });
+  for (const layout of ["table", "grid"]) {
+    await page.goto("http://localhost:8766/pinnacle-history.html" + (layout === "grid" ? "?layout=grid" : "")); await page.setViewportSize({ width: 1920, height: 1000 }); await sleep(900);
+    const ph = await scan("http://localhost/pinnacle-history.html" + (layout === "grid" ? "?layout=grid" : ""));
+    const rows = ph.rows.map((r) => r.bet);
+    const esp = rows.find((b) => b.selection === "Espanyol"), rayo = rows.find((b) => b.selection === "Rayo Vallecano"), stra = rows.find((b) => b.selection === "Strasbourg"), vil = rows.find((b) => b.selection === "Villarreal");
+    check("Pinnacle history (" + layout + "): 10 single bets, none read as a parlay", rows.length === 10 && rows.every((b) => !b.isParlay), JSON.stringify(rows.map((b) => [b.selection, b.odds, b.isParlay])));
+    check("Pinnacle history (" + layout + "): selection, '-vs-' teams, market, odds, stake, date",
+      esp && esp.teamA === "Espanyol" && esp.teamB === "Real Madrid" && esp.market === "Partida 1X2" && esp.odds === 4.86 && esp.stake === 116.7 && esp.date === "2026-05-03" && esp.time === "13:55" && esp.currency === "BRL" && esp.result === "lost",
+      esp && JSON.stringify(esp));
+    check("Pinnacle history (" + layout + "): win proven by P/L (36.30 + 128.50 = 36.30 × 4.54)", rayo && rayo.result === "won" && ph.rows.find((r) => r.bet === rayo || r.bet.selection === "Rayo Vallecano").checks.returnMatch === true, rayo && JSON.stringify(rayo));
+    check("Pinnacle history (" + layout + "): live tag and score stripped ('Strasbourg [0-0]', 'AO VIVO')", stra && stra.live === true && stra.market === "Partida 1X2" && stra.teamB === "Toulouse", stra && JSON.stringify(stra));
+    if (layout === "table") {
+      const v = (await queue()).outbox.find((x) => x.id === held);
+      check("Pinnacle history: the pending Villarreal bet is settled (won), not duplicated", vil && vil.result === "won" && v && v.bet.result === "won" && ph.add.updated >= 1 && !(await queue()).queue.some((x) => x.bet.side === "Villarreal"),
+        JSON.stringify({ add: ph.add, held: v && [v.bet.result, v.dest] }));
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 860 });
+
   /* 18d. A tab that was open before the extension was installed / updated gets the watcher injected; no double watcher */
   await bgRun(() => chrome.scripting.unregisterContentScripts());
   await page.goto("http://localhost:8766/de-slip.html"); await sleep(800);

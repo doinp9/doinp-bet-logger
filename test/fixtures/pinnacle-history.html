@@ -1,0 +1,40 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Pinnacle-style bet history</title>
+<style>body{font-family:sans-serif;font-size:12px}.filters{display:flex;gap:16px;margin-bottom:12px}.filters label{display:block;font-weight:bold}
+table{border-collapse:collapse;width:1900px}th{background:#1c2b45;color:#fff;padding:6px}td{border-bottom:1px solid #ddd;padding:4px;text-align:center;vertical-align:middle}td.sel{text-align:right}
+.red{color:#d00}.green{color:#080}.b{font-weight:bold}.grid{display:grid;grid-template-columns:30px 280px 200px 650px 180px 200px 200px 160px;width:1900px}.grid>div{padding:4px;text-align:center;border-bottom:1px solid #ddd}.grid .hd{background:#1c2b45;color:#fff}.grid .sel{text-align:right}</style></head><body>
+<!-- Reproduces the user's pinnacle.bet.br "Histórico de apostas" screenshot (24 Sep 2026): same columns,
+     texts and numbers. The real markup couldn't be read (the site blocks the test machine), so it is
+     rendered both as a <table> and (?layout=grid) as a CSS grid of divs. -->
+<div class="filters"><div><label>Status</label><select><option>Decidido</option></select></div><div><label>Produto</label><select><option>Apostas em competições</option></select></div>
+<div><label>Esportes</label><select><option>Todos os esportes</option></select></div><div><label>Data até</label><select><option>Aceito</option></select></div><div><label>Data</label><input value="01/05/2026"> para <input value="31/05/2026"></div><button>Pesquisar</button></div>
+<div id="out"></div>
+<script>
+const R = [
+ ['3039832256','2026-05-03 13:55:05','2026-05-03 17:58:20','Espanyol','Espanyol -vs- Real Madrid','Partida 1X2','Espanha - La Liga @ 2026-05-03','4.860','116.70','-116.70','PERDEU','[0-0]','[0-2]'],
+ ['3039722699','2026-05-03 12:22:14','2026-05-03 14:14:22','Strasbourg [0-0]','Strasbourg -vs- Toulouse','<span class="red">AO VIVO</span> Partida 1X2','França - Ligue 1 @ 2026-05-03','3.320','200.00','-200.00','PERDEU','[1-1]','[1-2]'],
+ ['3039606322','2026-05-03 10:33:41','2026-05-03 13:17:44','Rayo Vallecano','Getafe -vs- Rayo Vallecano','Partida 1X2','Espanha - La Liga @ 2026-05-03','4.540','36.30','128.50','GANHO','[0-1]','[0-2]'],
+ ['3038911354','2026-05-02 15:59:23','2026-05-02 22:32:56','Athletico Paranaense','Athletico Paranaense -vs- Grêmio','Partida 1X2','Brasil - Série A @ 2026-05-02','1.775','158.40','-158.40','PERDEU','[0-0]','[0-0]'],
+ ['3038666095','2026-05-02 12:05:12','2026-05-02 18:02:12','Nice','Nice -vs- Lens','Partida 1X2','França - Ligue 1 @ 2026-05-02','4.740','63.90','-63.90','PERDEU','[0-0]','[1-1]'],
+ ['3038662015','2026-05-02 12:00:30','2026-05-02 17:55:56','Osasuna','Osasuna -vs- Barcelona','Partida 1X2','Espanha - La Liga @ 2026-05-02','4.630','142.80','-142.80','PERDEU','[0-0]','[1-2]'],
+ ['3038655027','2026-05-02 11:52:18','2026-05-02 15:56:41','Metz','Metz -vs- Mônaco','Partida 1X2','França - Ligue 1 @ 2026-05-02','7.620','170.70','-170.70','PERDEU','[0-0]','[1-2]'],
+ ['3038635677','2026-05-02 11:29:54','2026-05-02 15:30:57','Alavés','Alavés -vs- Athletic Bilbao','Partida 1X2','Espanha - La Liga @ 2026-05-02','2.940','70.80','-70.80','PERDEU','[1-0]','[2-4]'],
+ ['3038560229','2026-05-02 10:21:35','2026-05-02 12:54:54','Wolverhampton','Wolverhampton  -vs- Sunderland','Partida 1X2','Inglaterra - Premier League @ 2026-05-02','3.820','123.30','-123.30','PERDEU','[0-1]','[1-1]'],
+ ['3038445440','2026-05-02 08:31:29','2026-05-02 11:02:08','Villarreal','Villarreal -vs- Levante','Partida 1X2','Espanha - La Liga @ 2026-05-02','1.775','165.00','127.88','GANHO','[1-0]','[5-1]']];
+const H = ['#','Produto','Detalhe','Seleção','Probabilidades','Aposta (BRL)','Vitória/derrota','Status'];
+const cells = (r, i) => [String(i + 1), 'Apostas esportivas',
+  '<div><i>' + r[0] + '</i></div><div class="b">Futebol</div><div class="b">' + r[1] + '</div><div>' + r[2] + '</div>',
+  '<div class="b">' + r[3] + '</div><div>' + r[4] + '</div><div>' + r[5] + '</div><div>' + r[6] + '</div>',
+  '<div>' + r[7] + '</div><div class="red b">D</div>',
+  '<div>Risco: ' + r[8] + '</div><div>(' + r[8] + ')</div>',
+  '<span class="' + (r[9][0] === '-' ? 'red' : '') + '">' + r[9] + '</span>',
+  '<div>Decidido</div><div class="' + (r[10] === 'GANHO' ? 'green' : 'red') + '">' + r[10] + '</div><div>1º Tempo: ' + r[11] + '</div><div>Partida: ' + r[12] + '</div>'];
+const grid = /layout=grid/.test(location.search);
+if (!grid) {
+  document.getElementById('out').innerHTML = '<table><thead><tr>' + H.map((h) => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>' +
+    R.map((r, i) => '<tr>' + cells(r, i).map((c, k) => '<td' + (k === 3 ? ' class="sel"' : '') + '>' + c + '</td>').join('') + '</tr>').join('') +
+    '<tr><td></td><td></td><td colspan="2">Total</td><td></td><td class="b">1,247.90</td><td class="red b">-790.22</td><td></td></tr></tbody></table>';
+} else {
+  document.getElementById('out').innerHTML = '<div class="grid">' + H.map((h) => '<div class="hd">' + h + '</div>').join('') +
+    R.map((r, i) => cells(r, i).map((c, k) => '<div' + (k === 3 ? ' class="sel"' : '') + '>' + c + '</div>').join('')).join('') + '</div>';
+}
+</script></body></html>

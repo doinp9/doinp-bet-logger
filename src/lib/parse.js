@@ -208,7 +208,7 @@
   // slip headers like "1 Selections" / "2 Seleções" / "Singles" glued onto a selection row
   var COUNT_WORD = /\b(selections?|sele[c\u00e7](?:ao|\u00e3o|oes|\u00f5es)|singles?|simples)\b/i;
   function stripTags(l) {
-    var t = clean(String(l).replace(HALF_TAG_STRIP, " ").replace(PROMO_STRIP, " "));
+    var t = clean(String(l).replace(HALF_TAG_STRIP, " ").replace(PROMO_STRIP, " ").replace(/\s*\[\s*\d{1,3}\s*[-:]\s*\d{1,3}\s*\]/g, " "));
     if (COUNT_WORD.test(t)) t = clean(t.replace(new RegExp(COUNT_WORD.source, "gi"), " ").replace(/^\d{1,2}\s+(?=\D)/, ""));
     // "Under 11.5 11.5": a line drawn twice on one row
     return t.split(" ").filter(function (w, i, a) { return i === 0 || w !== a[i - 1]; }).join(" ");
@@ -324,7 +324,7 @@
   }
 
   /* ---------- events / selections ---------- */
-  var VS_RE = /\s+(?:v|vs\.?|versus|x|-|–|—|@)\s+/i;
+  var VS_RE = /\s+(?:v|vs\.?|versus|x|-|–|—|@)\s+|\s*-vs\.?-\s*/i;
   function splitEvent(text) {
     var t = clean(text);
     var parts = t.split(VS_RE);
