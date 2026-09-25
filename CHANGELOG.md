@@ -2,6 +2,16 @@
 
 Newest first.
 
+## 0.7.4 · bets without a date can be exported and sent
+
+- **The problem:** Bet365's My Bets page often shows no date the extension can read. Those
+  bets were stuck in Review, and neither Export CSV nor Send to tracker would take them.
+- **The fix:** they are now exported and sent like any other bet. The tracker gives them the
+  import day, and you correct the date there if needed. Tested end to end: two undated Bet365
+  bets imported into the tracker with the import day.
+- **Wording:** the card shows this as information, not a warning. After an export, the message
+  says how many bets had no date.
+
 ## 0.7.3 · bet histories laid out as tables (Pinnacle)
 
 - **Pinnacle's "Histórico de apostas" was read wrong,** because it is a table with column

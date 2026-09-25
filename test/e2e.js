@@ -119,7 +119,7 @@ function serve(dir, port) {
     JSON.stringify(sg.map((x) => ({ o: x.bet.odds, s: x.bet.stake, live: x.bet.live, side: x.bet.side, ev: x.bet.teamA + "|" + x.bet.teamB }))));
 
   /* 5. Sportsbook inside a cross-origin iframe; the book comes from the top page */
-  await page.goto("http://127.0.0.1:8767/frame-host.html"); await sleep(1500);
+  await page.goto("http://127.0.0.1:8767/frame-host.html"); await sleep(3000); // the watcher loads in the frame at document_idle
   const fr = page.frameLocator("#sb");
   await fr.locator("#stake").fill("12,50"); await fr.locator("#place").click(); await sleep(3000);
   q = (await queue()).queue;
@@ -466,6 +466,30 @@ function serve(dir, port) {
     }
   }
   await page.setViewportSize({ width: 1280, height: 860 });
+
+  /* 18f. Bets without a date (Bet365 My Bets often shows none) are saved and exported anyway */
+  const und = await bgRun(async () => {
+    await HANDLERS["add-items"]({ host: "www.bet365.bet.br", payload: { status: "manual", date: "", bets: [
+      { selection: "Germany (W)", teamA: "Germany (W)", teamB: "Spain (W)", market: "Money Line", odds: 3.3, stake: 22.5, result: "lost", currency: "BRL" },
+      { selection: "Brazil", teamA: "Brazil", teamB: "Chile", market: "Money Line", odds: 1.5, stake: 10, result: "won", currency: "BRL" }] } });
+    const st = await chrome.storage.local.get("queue");
+    const ids = st.queue.filter((x) => !x.bet.date && (x.bet.side === "Germany (W)" || x.bet.side === "Brazil")).map((x) => x.id);
+    const r = await HANDLERS.save({ ids });
+    const after = await chrome.storage.local.get(["queue", "outbox"]);
+    return { ids, r, inQueue: after.queue.filter((x) => ids.includes(x.id)).length, out: after.outbox.filter((x) => ids.includes(x.id)) };
+  });
+  check("undated bets: saved (not left in Review) and ready to export", und.ids.length === 2 && und.r.saved === 2 && und.r.undated === 2 && und.inQueue === 0 && und.out.every((x) => x.dest === "pending"), JSON.stringify({ n: und.ids.length, r: und.r, inQueue: und.inQueue }));
+  const ucsv = globalThis.DBL_CSV.toCSV(und.out);
+  const tu0 = await nBets();
+  if (await tr.locator(".trk-scrim").count()) { await tr.keyboard.press("Escape"); await sleep(300); }
+  await tr.click(".trk-tab:nth-child(2)"); await sleep(400);
+  await tr.click(".trk-bets__head >> text=Import"); await sleep(300);
+  await tr.fill(".trk-imp__ta", ucsv); await sleep(500);
+  await tr.locator(".trk-modal__foot .btn--primary").click(); await sleep(600);
+  const ub = await tr.evaluate(() => JSON.parse(localStorage.getItem("doinp.tracker.state")).bets.slice(-2));
+  const today = await tr.evaluate(() => TRK.today());
+  check("undated bets: the tracker imports them with the import day (editable there)", (await nBets()) === tu0 + 2 && ub.every((b) => b.date === today) && ub.some((b) => b.result === "lost" && b.odds === 3.3 && b.stake === 22.5),
+    JSON.stringify(ub.map((b) => [b.teamA, b.date, b.odds, b.stake, b.result])));
 
   /* 18d. A tab that was open before the extension was installed / updated gets the watcher injected; no double watcher */
   await bgRun(() => chrome.scripting.unregisterContentScripts());

@@ -235,12 +235,12 @@
       w ? h("div.why" + (w.ok ? ".is-ok" : ".is-bad"), h("i", w.ok ? "✓" : "!"), h("span", w.text)) : null,
       k === "exchange" && (b.commission == null || b.commission === "") ? h("div.why.is-bad", h("i", "!"), h("span", t("x.commMissing"))) : null,
       convLine(b),
-      !b.date ? h("div.why.is-bad", h("i", "!"), h("span", t("noDate"))) : null,
+      !b.date ? h("div.why.is-info", h("i", "i"), h("span", t("noDate"))) : null,
       editing ? editForm(it) : null,
       h("div.bet__actions",
         h("span.grow", h("button.ghost.ghost--sm", { type: "button", onclick: function () { toggleEdit(it.id); } }, editing ? t("b.done") : t("b.edit"))),
         h("button.ghost.ghost--sm.ghost--danger", { type: "button", onclick: function () { act("discard", [it.id]); } }, t("b.discard"))),
-      h("div.acts", isPending(it) ? pendingButtons(it) : exportButtons([it.id], false, !b.date))
+      h("div.acts", isPending(it) ? pendingButtons(it) : exportButtons([it.id], false, false))
     );
   }
   function dirLabel(b) { return kindOf(b) === "prediction" ? t("pm." + b.dir) : t("x." + b.dir); }
@@ -273,7 +273,8 @@
   }
   function csvFirst() { return S.st.settings.exportTo !== "tracker"; }
   // bets without a date can't be exported (the tracker would stamp them with today's date)
-  function withDate(ids) { var ok = itemsFor(ids).filter(function (x) { return x.bet.date; }).map(function (x) { return x.id; }); return { ok: ok, missing: ids.length - ok.length }; }
+  // bets without a date are exported too (the tracker gives them the import day); this only counts them
+  function undatedIn(ids) { return itemsFor(ids).filter(function (x) { return !x.bet.date; }).length; }
   function isPending(it) { return !it.bet.result || it.bet.result === "pending"; }
   function splitPending(ids) {
     var items = itemsFor(ids);
@@ -282,14 +283,14 @@
   // settled → CSV now; still pending → kept in History → Pending until the result is read
   function exportCsv(ids, force) {
     var sp = force ? { settled: ids, pending: [] } : splitPending(ids);
-    var d = withDate(sp.settled), parts = [];
+    var d = { ok: sp.settled, undated: undatedIn(sp.settled) }, parts = [];
     var hold = sp.pending.length ? bg({ type: "save", ids: sp.pending }) : Promise.resolve(null);
     hold.then(function (r) {
       if (d.ok.length) { downloadCsv(d.ok, "exported"); parts.push(t("exp.csvDone", { n: d.ok.length })); }
       if (r && r.held) parts.push(t("held", { n: r.held }));
-      if (d.missing || (r && r.needDate)) parts.push(t("needDate", { n: d.missing + ((r && r.needDate) || 0) }));
+      if (d.undated || (r && r.undated)) parts.push(t("needDate", { n: d.undated + ((r && r.undated) || 0) }));
       sp.pending.forEach(function (id) { S.sel.delete(id); });
-      msg(parts.join(" ") || t("noDate"), d.missing || (r && r.needDate) || !parts.length ? "warn" : "ok");
+      msg(parts.join(" "), "ok");
       return refresh();
     });
   }
@@ -299,22 +300,22 @@
       var parts = [];
       if (r.saved) parts.push(t("exp.sent", { n: r.saved }));
       if (r.held) parts.push(t("held", { n: r.held }));
-      if (r.needDate) parts.push(t("needDate", { n: r.needDate }));
-      msg(parts.join(" "), r.needDate ? "warn" : "ok");
+      if (r.undated) parts.push(t("needDate", { n: r.undated }));
+      msg(parts.join(" "), "ok");
       return (r.saved ? bg({ type: "open-tracker" }) : null);
     }).then(refresh);
   }
   function holdIds(ids) {
     bg({ type: "save", ids: ids }).then(function (r) {
       ids.forEach(function (id) { S.sel.delete(id); S.editing.delete(id); });
-      msg(t("held", { n: r.held }) + (r.needDate ? " " + t("needDate", { n: r.needDate }) : ""), r.needDate ? "warn" : "ok");
+      msg(t("held", { n: r.held }), "ok");
       return refresh();
     });
   }
   // a single still-pending bet: [Export now] [Keep until settled]
   function pendingButtons(it) {
-    var now = h("button.ghost.act", { type: "button", disabled: !it.bet.date, onclick: function () { if (csvFirst()) exportCsv([it.id], true); else sendTracker([it.id], true); } }, svg(csvFirst() ? IC.download : IC.send, 15), t("b.now"));
-    var keep = h("button.raised.act", { type: "button", disabled: !it.bet.date, onclick: function () { holdIds([it.id]); } }, svg(IC.check, 15), t("b.hold"));
+    var now = h("button.ghost.act", { type: "button", onclick: function () { if (csvFirst()) exportCsv([it.id], true); else sendTracker([it.id], true); } }, svg(csvFirst() ? IC.download : IC.send, 15), t("b.now"));
+    var keep = h("button.raised.act", { type: "button", onclick: function () { holdIds([it.id]); } }, svg(IC.check, 15), t("b.hold"));
     return [now, keep];
   }
   // [secondary] [primary] — full-size buttons; count shown on bulk actions
@@ -381,7 +382,7 @@
     f.hidden = false;
     f.appendChild(h("div.bulk__row",
       h("span.bulk__n", t("bulk.sel", { n: ids.length })),
-      h("button.ghost.ghost--sm", { type: "button", onclick: function () { var d = withDate(ids); if (d.ok.length) copyCsv(d.ok, "exported"); else msg(t("noDate"), "warn"); } }, svg(IC.copy, 14), t("act.copy")),
+      h("button.ghost.ghost--sm", { type: "button", onclick: function () { copyCsv(ids, "exported"); } }, svg(IC.copy, 14), t("act.copy")),
       h("button.ghost.ghost--sm.ghost--danger", { type: "button", onclick: function () { act("discard", ids); } }, t("bulk.discard"))));
     f.appendChild(h("div.acts", exportButtons(ids, true, false)));
   }
@@ -391,8 +392,8 @@
       ids.forEach(function (id) { S.sel.delete(id); S.editing.delete(id); });
       if (type === "save") {
         var text = t(r.dest === "tracker" ? (r.trackerOpen ? "savedOpen" : "saved") : "savedCsv", { n: r.saved });
-        if (r.needDate) text += " " + t("needDate", { n: r.needDate });
-        msg(text, r.needDate ? "warn" : "ok");
+        if (r.undated) text += " " + t("needDate", { n: r.undated });
+        msg(text, "ok");
       } else if (type === "discard") msg(t("discarded", { n: r.discarded }), "ok");
       return refresh();
     });

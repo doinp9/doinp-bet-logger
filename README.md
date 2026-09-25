@@ -9,7 +9,7 @@ It reads pages. It never clicks, types, submits or sends anything, and it has no
 **It collects no data:** everything stays in your browser. The code is here so you can check.
 Portuguese install guide: [LEIA-ME.md](LEIA-ME.md).
 
-Version 0.7.3 · [changelog](CHANGELOG.md) · [privacy](PRIVACY.md) · MIT license
+Version 0.7.4 · [changelog](CHANGELOG.md) · [privacy](PRIVACY.md) · MIT license
 
 ---
 
@@ -218,7 +218,7 @@ If a site isn't detected:
 
 ```
 node --test test/unit.test.js test/markets.test.js       # 23 tests, no browser needed
-xvfb-run node test/e2e.js <path-to-website-repo>          # 78 end-to-end checks in Chromium
+xvfb-run node test/e2e.js <path-to-website-repo>          # 80 end-to-end checks in Chromium
 ```
 
 The end-to-end test loads the unpacked extension in Chromium and drives the synthetic pages in

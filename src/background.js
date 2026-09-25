@@ -242,16 +242,16 @@ function saveIds(ids, dest, force) {
   return tx(function (st) {
     dest = dest || (st.settings.exportTo === "tracker" ? "tracker" : "pending");
     var r = byIds(st.queue, ids);
-    var missingDate = r.hit.filter(function (x) { return !x.bet.date; });
-    var ok = r.hit.filter(function (x) { return x.bet.date; });
-    st.queue = r.rest.concat(missingDate);
+    // bets without a date go too: the tracker gives them the import day, and you correct it there
+    var ok = r.hit, undated = ok.filter(function (x) { return !x.bet.date; }).length;
+    st.queue = r.rest;
     var held = 0;
     ok.forEach(function (x) {
       x.savedAt = Date.now();
       if (!force && (!x.bet.result || x.bet.result === "pending")) { x.dest = "hold"; held++; } else x.dest = dest;
     });
     st.outbox = ok.concat(st.outbox);
-    return { saved: ok.length - held, held: held, needDate: missingDate.length, dest: dest, settings: st.settings };
+    return { saved: ok.length - held, held: held, undated: undated, dest: dest, settings: st.settings };
   }).then(function (r) {
     if (r.dest !== "tracker") { delete r.settings; r.trackerOpen = false; return r; }
     return pokeTracker(r.settings).then(function (n) { r.trackerOpen = n > 0; delete r.settings; return r; });
